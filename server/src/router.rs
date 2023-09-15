@@ -1,8 +1,7 @@
 use crate::AppState;
 use axum::body::{boxed, Body};
 use axum::http::Response;
-use axum::Router;
-use axum::{http::StatusCode, routing::get};
+use axum::{http::StatusCode, routing::get, routing::post, Router};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::fs;
@@ -10,13 +9,16 @@ use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::handler::{health_check_handler, post_list_handler, user_list_handler};
+use crate::handler::{
+    health_check_handler, new_post_handler, post_list_handler, user_list_handler,
+};
 
 pub fn create_router(app_state: Arc<AppState>, opt: crate::Opt) -> Router {
     Router::new()
         .route("/api/health", get(health_check_handler))
         .route("/api/users", get(user_list_handler))
         .route("/api/posts", get(post_list_handler))
+        .route("/api/posts", post(new_post_handler))
         .fallback_service(get(|req| async move {
             match ServeDir::new(&opt.static_dir).oneshot(req).await {
                 Ok(res) => {

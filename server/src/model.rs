@@ -24,3 +24,9 @@ pub struct PostModel {
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
 }
+
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+pub struct CreatePostRequest {
+    pub title: String,
+    pub content: String,
+}

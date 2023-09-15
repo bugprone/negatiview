@@ -1,12 +1,12 @@
-use std::sync::Arc;
-
-use crate::model::{PostModel, UserModel};
-use crate::schema::FilterOptions;
-use crate::AppState;
 use axum::extract::{Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
+use std::sync::Arc;
+
+use crate::model::{CreatePostRequest, PostModel, UserModel};
+use crate::schema::FilterOptions;
+use crate::AppState;
 
 pub async fn health_check_handler() -> impl IntoResponse {
     const MESSAGE: &str = "negatiview server is working!";
@@ -89,4 +89,32 @@ pub async fn post_list_handler(
     });
 
     Ok(Json(json_response))
+}
+
+pub async fn new_post_handler(
+    State(data): State<Arc<AppState>>,
+    Json(post): Json<CreatePostRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let query_result = sqlx::query!(
+        "INSERT INTO posts (title, content) VALUES ($1, $2) returning *",
+        post.title,
+        post.content
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    if query_result.is_err() {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": "Something bad happened while creating post",
+        });
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+    }
+
+    let json_response = serde_json::json!({
+        "status": "success",
+        "message": "Post created successfully"
+    });
+
+    Ok((StatusCode::CREATED, Json(json_response)))
 }
