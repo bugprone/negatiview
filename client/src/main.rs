@@ -9,12 +9,18 @@ enum Route {
     Home,
     #[at("/health")]
     Healthcheck,
+    #[at("/users")]
+    Users,
+    #[at("/posts")]
+    Posts,
 }
 
 fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! { <h1> { "Hello Client" } </h1> },
         Route::Healthcheck => html! { <Healthcheck /> },
+        Route::Users => html! { <Users /> },
+        Route::Posts => html! { <Posts /> },
     }
 }
 
@@ -37,6 +43,102 @@ fn hello_server() -> Html {
             if data.is_none() {
                 spawn_local(async move {
                     let resp = Request::get("/api/health").send().await.unwrap();
+                    let result = {
+                        if !resp.ok() {
+                            Err(format!(
+                                "Error fetching data {} ({})",
+                                resp.status(),
+                                resp.status_text()
+                            ))
+                        } else {
+                            resp.text().await.map_err(|err| err.to_string())
+                        }
+                    };
+                    data.set(Some(result));
+                });
+            }
+
+            || ()
+        });
+    }
+
+    match data.as_ref() {
+        None => {
+            html! {
+                <div> { "No server response" } </div>
+            }
+        }
+        Some(Ok(data)) => {
+            html! {
+                <div> { "Server response: " }{ data } </div>
+            }
+        }
+        Some(Err(err)) => {
+            html! {
+                <div> { "Server error: " }{ err } </div>
+            }
+        }
+    }
+}
+
+#[function_component(Users)]
+fn users_server() -> Html {
+    let data = use_state(|| None);
+
+    {
+        let data = data.clone();
+        use_effect(move || {
+            if data.is_none() {
+                spawn_local(async move {
+                    let resp = Request::get("/api/users").send().await.unwrap();
+                    let result = {
+                        if !resp.ok() {
+                            Err(format!(
+                                "Error fetching data {} ({})",
+                                resp.status(),
+                                resp.status_text()
+                            ))
+                        } else {
+                            resp.text().await.map_err(|err| err.to_string())
+                        }
+                    };
+                    data.set(Some(result));
+                });
+            }
+
+            || ()
+        });
+    }
+
+    match data.as_ref() {
+        None => {
+            html! {
+                <div> { "No server response" } </div>
+            }
+        }
+        Some(Ok(data)) => {
+            html! {
+                <div> { "Server response: " }{ data } </div>
+            }
+        }
+        Some(Err(err)) => {
+            html! {
+                <div> { "Server error: " }{ err } </div>
+            }
+        }
+    }
+}
+
+#[function_component(Posts)]
+fn posts_server() -> Html {
+    let data = use_state(|| None);
+
+    {
+        let data = data.clone();
+        use_effect(move || {
+            if data.is_none() {
+                spawn_local(async move {
+                    let resp = Request::get("/api/posts").send().await.unwrap();
                     let result = {
                         if !resp.ok() {
                             Err(format!(

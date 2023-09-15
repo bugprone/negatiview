@@ -10,12 +10,13 @@ use tower::{ServiceBuilder, ServiceExt};
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::handler::{health_check_handler, user_list_handler};
+use crate::handler::{health_check_handler, post_list_handler, user_list_handler};
 
 pub fn create_router(app_state: Arc<AppState>, opt: crate::Opt) -> Router {
     Router::new()
         .route("/api/health", get(health_check_handler))
         .route("/api/users", get(user_list_handler))
+        .route("/api/posts", get(post_list_handler))
         .fallback_service(get(|req| async move {
             match ServeDir::new(&opt.static_dir).oneshot(req).await {
                 Ok(res) => {
