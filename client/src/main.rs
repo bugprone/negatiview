@@ -1,3 +1,4 @@
+use web_sys::HtmlInputElement;
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
@@ -195,6 +196,22 @@ fn new_post_server() -> Html {
     let title_value = title.clone();
     let content_value = content.clone();
 
+    let oninput_title = {
+        let title = title.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            title.set(input.value());
+        })
+    };
+
+    let oninput_content = {
+        let content = content.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            content.set(input.value());
+        })
+    };
+
     let create_post = Callback::from(move |event: SubmitEvent| {
         event.prevent_default();
 
@@ -224,11 +241,11 @@ fn new_post_server() -> Html {
             <form onsubmit={ create_post }>
                 <div class="mb-3">
                     <label for="title" class="form-label">{ "Title" }</label>
-                    <input type="text" class="form-control" id="title" value={ title_value.to_string() } />
+                    <input type="text" class="form-control" id="title" value={ title_value.clone().to_string() } oninput={oninput_title} />
                 </div>
                 <div class="mb-3">
                     <label for="content" class="form-label">{ "Content" }</label>
-                    <textarea id="content" class="form-control" rows="3" value={ content_value.to_string() } />
+                    <textarea id="content" class="form-control" rows="3" value={ content_value.clone().to_string() } oninput={oninput_content} />
                 </div>
                 <div>
                     <button type="submit" class="btn btn-primary mb-3">{ "Create Post" }</button>
