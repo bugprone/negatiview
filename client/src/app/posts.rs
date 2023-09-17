@@ -108,7 +108,8 @@ pub fn new_post_server() -> Html {
     });
 
     html! {
-        <div class="container-fluid mt-3">
+        <div class="col-md-6 offset-md-3 col-xs-12 mt-3">
+            <h1 class="text-xs-center">{ "New Post" }</h1>
             <form onsubmit={ create_post }>
                 <div class="mb-3">
                     <label for="title" class="form-label">{ "Title" }</label>
@@ -118,8 +119,8 @@ pub fn new_post_server() -> Html {
                     <label for="content" class="form-label">{ "Content" }</label>
                     <textarea id="content" class="form-control" rows="3" value={ content_value.clone().to_string() } oninput={oninput_content} />
                 </div>
-                <div>
-                    <button type="submit" class="btn btn-primary mb-3">{ "Create Post" }</button>
+                <div class="mb-3 d-flex justify-content-center">
+                    <button type="submit" class="btn btn-primary">{ "Create Post" }</button>
                 </div>
             </form>
         </div>

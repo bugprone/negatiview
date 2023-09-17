@@ -4,7 +4,7 @@ use axum::response::IntoResponse;
 use axum::Json;
 use std::sync::Arc;
 
-use crate::model::{CreatePostRequest, PostModel, UserModel};
+use crate::model::{NewPostRequest, SignUpRequest, PostModel, UserModel};
 use crate::schema::FilterOptions;
 use crate::AppState;
 
@@ -55,6 +55,36 @@ pub async fn user_list_handler(
     Ok(Json(json_response))
 }
 
+pub async fn new_user_handler(
+    State(data): State<Arc<AppState>>,
+    Json(user): Json<SignUpRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let query_result = sqlx::query!(
+        "INSERT INTO users (email, first_name, last_name, display_name) VALUES ($1, $2, $3, $4) returning *",
+        user.email,
+        user.first_name,
+        user.last_name,
+        user.display_name
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    if query_result.is_err() {
+        let error_response = serde_json::json!({
+            "status": "fail",
+            "message": "Something bad happened while creating user",
+        });
+        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
+    }
+
+    let json_response = serde_json::json!({
+        "status": "success",
+        "message": "User created successfully",
+    });
+
+    Ok((StatusCode::CREATED, Json(json_response)))
+}
+
 pub async fn post_list_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
@@ -93,7 +123,7 @@ pub async fn post_list_handler(
 
 pub async fn new_post_handler(
     State(data): State<Arc<AppState>>,
-    Json(post): Json<CreatePostRequest>,
+    Json(post): Json<NewPostRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let query_result = sqlx::query!(
         "INSERT INTO posts (title, content) VALUES ($1, $2) returning *",

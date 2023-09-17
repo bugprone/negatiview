@@ -16,6 +16,14 @@ pub struct UserModel {
 }
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
+pub struct SignUpRequest {
+    pub email: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub display_name: String,
+}
+
+#[derive(Debug, FromRow, Deserialize, Serialize)]
 pub struct PostModel {
     pub id: i32,
     pub title: String,
@@ -26,7 +34,7 @@ pub struct PostModel {
 }
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
-pub struct CreatePostRequest {
+pub struct NewPostRequest {
     pub title: String,
     pub content: String,
 }
