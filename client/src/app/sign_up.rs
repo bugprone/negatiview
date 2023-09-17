@@ -3,7 +3,7 @@ use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
-use crate::requests::user::SignUpRequest;
+use crate::types::user::SignUpRequest;
 
 #[function_component(SignUp)]
 pub fn sign_up_page() -> Html {

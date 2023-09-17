@@ -1,2 +1,2 @@
 pub mod app;
-pub mod requests;
+pub mod types;

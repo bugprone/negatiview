@@ -4,6 +4,16 @@ use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+#[derive(Debug, Deserialize)]
+struct Post {
+    pub title: String,
+    pub content: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct PostListResponse {
+    pub posts: Vec<Post>,
+}
 #[function_component(Posts)]
 pub fn posts_server() -> Html {
     let data = use_state(|| None);
@@ -40,17 +50,41 @@ pub fn posts_server() -> Html {
             }
         }
         Some(Ok(data)) => {
+            let resp: PostListResponse = serde_json::from_str(&data).unwrap();
+
             html! {
-                <div class="label"> { "Server response: " }{ data } </div>
+                <div class="col-md-6 offset-md-3 col-xs-12 mt-3">
+                    <h1 class="mt-4"> { "Posts" } </h1>
+                    <div class="row">
+                        { for resp.posts.iter().map(|post| render_post(post)) }
+                    </div>
+                </div>
             }
         }
         Some(Err(err)) => {
             html! {
-                <div class="label"> { "Server error: " }{ err } </div>
+                <div class="alert alert-danger mt-4"> { "Server error: " }{ err } </div>
             }
         }
     }
 }
+
+fn render_post(post: &Post) -> Html {
+    let content_lines: Vec<&str> = post.content.split('\n').collect();
+
+    html! {
+        <div class="col-md-12 mb-3">
+            <div class="card custom-card">
+                <div class="card-body">
+                    <h5 class="card-title">{ &post.title }</h5>
+                    <hr />
+                    { for content_lines.iter().map(|line| html! { <p class="card-text">{ line }</p> }) }
+                </div>
+            </div>
+        </div>
+    }
+}
+
 
 
 #[derive(Debug, Serialize, Deserialize)]
