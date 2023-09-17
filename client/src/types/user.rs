@@ -7,3 +7,9 @@ pub struct SignUpRequest {
     pub last_name: String,
     pub display_name: String,
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: Option<String>,
+}

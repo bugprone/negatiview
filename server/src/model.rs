@@ -38,3 +38,16 @@ pub struct NewPostRequest {
     pub title: String,
     pub content: String,
 }
+
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+pub struct LoginRequest {
+    pub email: String,
+    pub password: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+pub struct LoginResponse {
+    pub status: String,
+    pub message: String,
+    pub user_model: UserModel,
+}

@@ -3,15 +3,16 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use axum::Json;
 use std::sync::Arc;
+use serde_json::{json, Value};
 
-use crate::model::{NewPostRequest, SignUpRequest, PostModel, UserModel};
+use crate::model::{NewPostRequest, SignUpRequest, PostModel, UserModel, LoginRequest};
 use crate::schema::FilterOptions;
 use crate::AppState;
 
 pub async fn health_check_handler() -> impl IntoResponse {
     const MESSAGE: &str = "negatiview server is working!";
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "message": MESSAGE
     });
@@ -22,7 +23,7 @@ pub async fn health_check_handler() -> impl IntoResponse {
 pub async fn user_list_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let Query(opts) = opts.unwrap_or_default();
 
     let limit = opts.limit.unwrap_or(10);
@@ -38,7 +39,7 @@ pub async fn user_list_handler(
     .await;
 
     if query_result.is_err() {
-        let error_response = serde_json::json!({
+        let error_response = json!({
             "status": "fail",
             "message": "Something bad happened while fetching all users",
         });
@@ -47,7 +48,7 @@ pub async fn user_list_handler(
 
     let users = query_result.unwrap();
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "users": users
     });
@@ -58,7 +59,7 @@ pub async fn user_list_handler(
 pub async fn new_user_handler(
     State(data): State<Arc<AppState>>,
     Json(user): Json<SignUpRequest>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let query_result = sqlx::query!(
         "INSERT INTO users (email, first_name, last_name, display_name) VALUES ($1, $2, $3, $4) returning *",
         user.email,
@@ -70,14 +71,14 @@ pub async fn new_user_handler(
     .await;
 
     if query_result.is_err() {
-        let error_response = serde_json::json!({
+        let error_response = json!({
             "status": "fail",
             "message": "Something bad happened while creating user",
         });
         return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
     }
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "message": "User created successfully",
     });
@@ -85,10 +86,44 @@ pub async fn new_user_handler(
     Ok((StatusCode::CREATED, Json(json_response)))
 }
 
+pub async fn login_handler(
+    State(data): State<Arc<AppState>>,
+    Json(user): Json<LoginRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let query_result = sqlx::query!(
+        "SELECT * FROM users WHERE email = $1",
+        user.email
+    )
+    .fetch_one(&data.db)
+    .await;
+
+    match query_result {
+        Ok(user) => {
+            Ok((
+                StatusCode::OK,
+                Json(json!({
+                    "status": "success",
+                    "message": "Login successful",
+                    "user_id": user.id,
+                })),
+            ))
+        }
+        Err(_) => {
+            Ok((
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "status": "fail",
+                    "message": "Login failed: User not found"
+                })),
+            ))
+        }
+    }
+}
+
 pub async fn post_list_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let Query(opts) = opts.unwrap_or_default();
 
     let limit = opts.limit.unwrap_or(10);
@@ -104,7 +139,7 @@ pub async fn post_list_handler(
     .await;
 
     if query_result.is_err() {
-        let error_response = serde_json::json!({
+        let error_response = json!({
             "status": "fail",
             "message": "Something bad happened while fetching all posts",
         });
@@ -113,7 +148,7 @@ pub async fn post_list_handler(
 
     let posts = query_result.unwrap();
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "posts": posts
     });
@@ -124,9 +159,9 @@ pub async fn post_list_handler(
 pub async fn new_post_handler(
     State(data): State<Arc<AppState>>,
     Json(post): Json<NewPostRequest>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let query_result = sqlx::query!(
-        "INSERT INTO posts (title, content) VALUES ($1, $2) returning *",
+        "INSERT INTO posts (title, content) VALUES ($1, $2) RETURNING *",
         post.title,
         post.content
     )
@@ -134,14 +169,14 @@ pub async fn new_post_handler(
     .await;
 
     if query_result.is_err() {
-        let error_response = serde_json::json!({
+        let error_response = json!({
             "status": "fail",
             "message": "Something bad happened while creating post",
         });
         return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
     }
 
-    let json_response = serde_json::json!({
+    let json_response = json!({
         "status": "success",
         "message": "Post created successfully"
     });

@@ -4,6 +4,7 @@ use yew_router::prelude::*;
 use crate::app::health::Healthcheck;
 use crate::app::posts::{NewPost, Posts};
 use crate::app::sign_up::SignUp;
+use crate::app::login::Login;
 use crate::app::users::Users;
 
 #[derive(Clone, Routable, PartialEq)]
@@ -16,6 +17,8 @@ enum Route {
     Users,
     #[at("/users/sign_up")]
     SignUp,
+    #[at("/users/login")]
+    Login,
     #[at("/posts")]
     Posts,
     #[at("/posts/new")]
@@ -30,9 +33,10 @@ fn switch(route: Route) -> Html {
         Route::Home => html! { <h1> { "Welcome to Negatiview" } </h1> },
         Route::Healthcheck => html! { <Healthcheck /> },
         Route::Users => html! { <Users /> },
+        Route::SignUp => html! { <SignUp /> },
+        Route::Login => html! { <Login /> },
         Route::Posts => html! { <Posts /> },
         Route::NewPost => html! { <NewPost /> },
-        Route::SignUp => html! { <SignUp /> },
         Route::NotFound => html! { "Page not found" },
     }
 }
