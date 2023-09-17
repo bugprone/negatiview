@@ -1,15 +1,12 @@
 ## How to Launch
 ```bash
 # docker-compose
-make up
+$ make up
+$ make down
 
-# server
-cd server
-cargo run --bin server -- --port 8081
+# launch
+$ sh dev.sh
 
-# client
-cd client
-trunk serve
 ```
 
 ## Database Stack
