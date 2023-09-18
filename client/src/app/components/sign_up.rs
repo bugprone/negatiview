@@ -74,53 +74,49 @@ pub fn sign_up_page() -> Html {
     };
 
     html! {
-        <div class="col-md-6 offset-md-3 col-xs-12 mt-3">
-            <h1 class="text-xs-center">{ "Sign Up" }</h1>
-            <p class="text-xs-center">
-                // <Link<Route> to={Route::Login}>
-                //     { "Have an account?" }
-                // </Link<Route>>
-            </p>
-            // <ListErrors error={user_register.error.clone()} />
-            <form onsubmit={ onsubmit }>
+        <div class="max-w-md mx-auto mt-12">
+            <h1 class="text-center text-xl font-semibold">{ "Sign Up" }</h1>
+            <form onsubmit={ onsubmit } class="mt-4">
                 <div class="mb-3">
-                    <label for="email" class="form-label">{ "Email" }</label>
+                    <label for="email" class="block text-sm font-medium text-gray-700">{ "Email" }</label>
                     <input
-                        class="form-control"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="email"
                         value={ sign_up_request.email.clone() }
                         oninput={ oninput_email }
-                        />
+                    />
                 </div>
                 <div class="mb-3">
-                    <label for="first_name" class="form-label">{ "First Name" }</label>
+                    <label for="first_name" class="block text-sm font-medium text-gray-700">{ "First Name" }</label>
                     <input
-                        class="form-control"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
                         value={ sign_up_request.first_name.clone() }
                         oninput={ oninput_first_name }
-                        />
+                    />
                 </div>
                 <div class="mb-3">
-                    <label for="last_name" class="form-label">{ "Last Name" }</label>
+                    <label for="last_name" class="block text-sm font-medium text-gray-700">{ "Last Name" }</label>
                     <input
-                        class="form-control"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
                         value={ sign_up_request.last_name.clone() }
                         oninput={ oninput_last_name }
-                        />
+                    />
                 </div>
                 <div class="mb-3">
-                    <label for="display_name" class="form-label">{ "Display Name" }</label>
+                    <label for="display_name" class="block text-sm font-medium text-gray-700">{ "Display Name" }</label>
                     <input
-                        class="form-control"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
                         value={ sign_up_request.display_name.clone() }
                         oninput={ oninput_display_name }
-                        />
+                    />
                 </div>
-                <div class="mb-3 d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary"> { "Sign Up" } </button>
+                <div class="mb-3 flex justify-center">
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:outline-none">
+                        { "Sign Up" }
+                    </button>
                 </div>
             </form>
         </div>

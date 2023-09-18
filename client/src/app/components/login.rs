@@ -43,20 +43,22 @@ pub fn login_page() -> Html {
     };
 
     html! {
-        <div class="col-md-6 offset-md-3 col-xs-12 mt-3">
-            <h1 class="text-xs-center">{ "Login" }</h1>
+        <div class="max-w-md mx-auto mt-12">
+            <h1 class="text-center text-2xl font-semibold">{ "Login" }</h1>
             <form onsubmit={ onsubmit }>
-                <div class="mb-3">
-                    <label for="email" class="form-label">{ "Email" }</label>
+                <div class="mb-4">
+                    <label for="email" class="block text-sm font-medium text-gray-700">{ "Email" }</label>
                     <input
-                        class="form-control"
+                        class="mt-1 p-2 border rounded w-full"
                         type="email"
                         value={ login_request.email.clone() }
                         oninput={ oninput_email }
                         />
                 </div>
-                <div class="mb-3 d-flex justify-content-center">
-                    <button type="submit" class="btn btn-primary"> { "Login" } </button>
+                <div class="mb-6 flex justify-center">
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:outline-none">
+                        { "Login" }
+                    </button>
                 </div>
             </form>
         </div>

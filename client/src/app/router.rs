@@ -1,14 +1,18 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
+use crate::app::components::footer::Footer;
+use crate::app::components::header::Header;
+use crate::app::components::login::Login;
+use crate::app::components::new_post::NewPost;
+use crate::app::components::post_list::PostList;
+use crate::app::components::sign_up::SignUp;
 use crate::app::health::Healthcheck;
-use crate::app::posts::{NewPost, Posts};
-use crate::app::sign_up::SignUp;
-use crate::app::login::Login;
 use crate::app::users::Users;
+use crate::app::home::Home;
 
 #[derive(Clone, Routable, PartialEq)]
-enum Route {
+pub enum Route {
     #[at("/")]
     Home,
     #[at("/health")]
@@ -20,7 +24,7 @@ enum Route {
     #[at("/users/login")]
     Login,
     #[at("/posts")]
-    Posts,
+    PostList,
     #[at("/posts/new")]
     NewPost,
     #[not_found]
@@ -30,14 +34,14 @@ enum Route {
 
 fn switch(route: Route) -> Html {
     match route {
-        Route::Home => html! { <h1> { "Welcome to Negatiview" } </h1> },
+        Route::Home => html! { <Home /> },
         Route::Healthcheck => html! { <Healthcheck /> },
         Route::Users => html! { <Users /> },
         Route::SignUp => html! { <SignUp /> },
         Route::Login => html! { <Login /> },
-        Route::Posts => html! { <Posts /> },
+        Route::PostList => html! { <PostList /> },
         Route::NewPost => html! { <NewPost /> },
-        Route::NotFound => html! { "Page not found" },
+        Route::NotFound => html! { <p class="text-red-500">{ "Page not found" }</p> },
     }
 }
 
@@ -45,7 +49,9 @@ fn switch(route: Route) -> Html {
 pub fn app() -> Html {
     html! {
         <BrowserRouter>
+            <Header />
             <Switch<Route> render={switch} />
+            <Footer />
         </BrowserRouter>
     }
 }

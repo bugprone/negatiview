@@ -42,6 +42,4 @@ Cargo.lock
 
 # Ignore any hidden files or directories
 /.*.swp
-.DS_Store
-.DS_Store
-.DS_Store
+/client/tailwind.css

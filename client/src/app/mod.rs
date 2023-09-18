@@ -1,6 +1,5 @@
 pub mod router;
-pub mod health;
-pub mod users;
-pub mod posts;
-pub mod sign_up;
-mod login;
+mod components;
+mod health;
+mod users;
+mod home;
