@@ -29,8 +29,8 @@ pub fn home() -> Html {
                 <div class="grid grid-cols-12 gap-4">
                     <MainPage />
                     <div class="col-span-12 sm:col-span-12 md:col-span-3">
-                        <div class="sidebar">
-                            <p> { "Sidebar" } </p>
+                        <div class="max-w-screen-lg mx-auto p-4">
+                            <h1 class="text-3xl font-semibold mb-4"> { "Sidebar" } </h1>
                         </div>
                     </div>
                 </div>

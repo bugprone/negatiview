@@ -52,7 +52,7 @@ pub fn post_list() -> Html {
             let resp: PostListResponse = serde_json::from_str(&data).unwrap();
 
             html! {
-                <div class="max-w-screen-lg mx-auto mt-8">
+                <div class="max-w-screen-lg mx-auto p-4">
                     <h1 class="text-3xl font-semibold mb-4"> { "Posts" } </h1>
                     <div class="space-y-4">
                         { for resp.posts.iter().map(|post| render_post(post)) }
