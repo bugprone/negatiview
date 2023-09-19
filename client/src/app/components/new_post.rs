@@ -3,6 +3,9 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use yew_router::hooks::use_navigator;
+
+use crate::router::Route;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreatePostRequest {
@@ -11,7 +14,10 @@ struct CreatePostRequest {
 }
 
 #[function_component(NewPost)]
-pub fn new_post_server() -> Html {
+pub fn new_post_page() -> Html {
+    let navigator = use_navigator().unwrap();
+    let cloned_navigator = navigator.clone();
+
     let title = use_state(|| String::new());
     let content = use_state(|| String::new());
 
@@ -36,6 +42,7 @@ pub fn new_post_server() -> Html {
 
     let create_post = Callback::from(move |event: SubmitEvent| {
         event.prevent_default();
+        let navigator = cloned_navigator.clone();
 
         let request_data = CreatePostRequest {
             title: title.clone().to_string(),
@@ -52,6 +59,7 @@ pub fn new_post_server() -> Html {
 
             if resp.ok() {
                 log::info!("{:?}", resp);
+                navigator.push(&Route::Home);
             } else {
                 log::error!("{:?}", resp);
             }

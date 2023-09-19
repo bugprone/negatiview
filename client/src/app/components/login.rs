@@ -2,17 +2,23 @@ use gloo_net::http::Request;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+use yew_router::prelude::*;
+
+use crate::router::Route;
 use crate::types::user::LoginRequest;
 
 #[function_component(Login)]
 pub fn login_page() -> Html {
+    let navigator = use_navigator().unwrap();
+    let cloned_navigator = navigator.clone();
+
     let login_request = use_state(LoginRequest::default);
 
     let onsubmit = {
         let sign_up_req = login_request.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
-
+            let navigator = cloned_navigator.clone();
             let request_data = (*sign_up_req).clone();
 
             spawn_local(async move {
@@ -24,7 +30,7 @@ pub fn login_page() -> Html {
                 let resp = req.send().await.unwrap();
 
                 if resp.ok() {
-                    log::info!("{:?}", resp);
+                    navigator.push(&Route::Home);
                 } else {
                     log::error!("{:?}", resp);
                 }
@@ -44,7 +50,7 @@ pub fn login_page() -> Html {
 
     html! {
         <div class="max-w-md mx-auto mt-12">
-            <h1 class="text-center text-2xl font-semibold">{ "Login" }</h1>
+            <h1 class="text-center text-xl font-semibold">{ "Login" }</h1>
             <form onsubmit={ onsubmit }>
                 <div class="mb-4">
                     <label for="email" class="block text-sm font-medium text-gray-700">{ "Email" }</label>

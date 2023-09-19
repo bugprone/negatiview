@@ -1,7 +1,7 @@
-use gloo_net::http::Request;
 use serde::Deserialize;
 use wasm_bindgen_futures::spawn_local;
-use yew::{function_component, Html, html, use_effect, use_state};
+use gloo_net::http::Request;
+use yew::prelude::*;
 
 #[derive(Debug, Deserialize)]
 struct Post {
@@ -45,7 +45,7 @@ pub fn post_list() -> Html {
     match data.as_ref() {
         None => {
             html! {
-               <div class="text-center mt-4 text-red-500"> { "No server response" } </div>
+               <div class="text-center mt-4"> { "Loading" } </div>
             }
         }
         Some(Ok(data)) => {

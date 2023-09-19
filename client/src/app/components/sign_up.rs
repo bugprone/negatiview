@@ -2,17 +2,23 @@ use gloo_net::http::Request;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yew_router::hooks::use_navigator;
 
+use crate::router::Route;
 use crate::types::user::SignUpRequest;
 
 #[function_component(SignUp)]
 pub fn sign_up_page() -> Html {
+    let navigator = use_navigator().unwrap();
+    let cloned_navigator = navigator.clone();
+
     let sign_up_request = use_state(SignUpRequest::default);
 
     let onsubmit = {
         let sign_up_req = sign_up_request.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
+            let navigator = cloned_navigator.clone();
 
             let request_data = (*sign_up_req).clone();
 
@@ -26,6 +32,7 @@ pub fn sign_up_page() -> Html {
 
                 if resp.ok() {
                     log::info!("{:?}", resp);
+                    navigator.push(&Route::Login);
                 } else {
                     log::error!("{:?}", resp);
                 }

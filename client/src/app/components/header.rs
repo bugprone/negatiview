@@ -1,13 +1,16 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
-use crate::app::router::Route;
+
+use crate::router::Route;
 
 #[function_component(Header)]
 pub fn header() -> Html {
     html! {
         <nav class="bg-white p-4">
             <div class="container mx-auto flex justify-between items-center">
-                <a class="text-black text-2xl font-bold" href="/">{ "Negatiview" }</a>
+                <div class="text-black text-2xl font-bold">
+                    <Link<Route> to={ Route::Home }>{ "Negatiview" }</Link<Route>>
+                </div>
                 { logged_out_view() }
             </div>
         </nav>
@@ -18,8 +21,8 @@ fn logged_out_view() -> Html {
     html! {
         <ul class="flex space-x-6">
             <li>
-                <Link<Route> to={Route::Home} classes="text-black hover:underline">
-                    { "Home" }
+                <Link<Route> to={Route::PostList} classes="text-black hover:underline">
+                    { "Posts" }
                 </Link<Route>>
             </li>
             <li>
