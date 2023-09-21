@@ -7,6 +7,7 @@ use crate::app::components::login::Login;
 use crate::app::components::new_post::NewPost;
 use crate::app::components::post_list::PostList;
 use crate::app::components::sign_up::SignUp;
+use crate::app::components::user_context_provider::UserContextProvider;
 use crate::app::health::Healthcheck;
 use crate::app::users::Users;
 use crate::app::home::Home;
@@ -48,10 +49,12 @@ fn switch(route: Route) -> Html {
 #[function_component(App)]
 pub fn app() -> Html {
     html! {
-        <BrowserRouter>
-            <Header />
-            <Switch<Route> render={switch} />
-            <Footer />
-        </BrowserRouter>
+        <HashRouter>
+            <UserContextProvider>
+                <Header />
+                <Switch<Route> render={switch} />
+                <Footer />
+            </UserContextProvider>
+        </HashRouter>
     }
 }

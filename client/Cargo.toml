@@ -19,3 +19,5 @@ yew-router = "0.17.0"
 web-sys = "0.3.64"
 gloo = "0.10.0"
 lazy_static = "1.4.0"
+reqwest = { version = "0.11.20", features = ["json"] }
+thiserror = "1.0.48"

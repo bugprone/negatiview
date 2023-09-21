@@ -23,6 +23,13 @@ pub struct SignUpRequest {
     pub display_name: String,
 }
 
+#[derive(Debug, Serialize)]
+pub struct SignUpResponse {
+    pub status: String,
+    pub message: String,
+    pub user_info: UserInfo,
+}
+
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 pub struct PostModel {
     pub id: i32,
@@ -45,9 +52,16 @@ pub struct LoginRequest {
     pub password: Option<String>,
 }
 
-#[derive(serde::Serialize)]
+#[derive(Debug, Serialize)]
 pub struct LoginResponse {
     pub status: String,
     pub message: String,
-    pub user_model: UserModel,
+    pub user_info: UserInfo,
+}
+
+#[derive(Debug, Serialize)]
+pub struct UserInfo {
+    pub email: String,
+    pub username: String,
+    pub token: String,
 }

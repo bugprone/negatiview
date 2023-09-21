@@ -5,7 +5,7 @@ use axum::Json;
 use std::sync::Arc;
 use serde_json::{json, Value};
 
-use crate::model::{NewPostRequest, SignUpRequest, PostModel, UserModel, LoginRequest};
+use crate::model::*;
 use crate::schema::FilterOptions;
 use crate::AppState;
 
@@ -78,9 +78,14 @@ pub async fn new_user_handler(
         return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
     }
 
-    let json_response = json!({
-        "status": "success",
-        "message": "User created successfully",
+    let json_response = json!(SignUpResponse {
+        status: "success".to_string(),
+        message: "Login successful".to_string(),
+        user_info: UserInfo {
+            email: user.email,
+            username: user.display_name,
+            token: "token".to_string()
+        }
     });
 
     Ok((StatusCode::CREATED, Json(json_response)))
@@ -101,10 +106,14 @@ pub async fn login_handler(
         Ok(user) => {
             Ok((
                 StatusCode::OK,
-                Json(json!({
-                    "status": "success",
-                    "message": "Login successful",
-                    "user_id": user.id,
+                Json(json!(LoginResponse {
+                    status: "success".to_string(),
+                    message: "Login successful".to_string(),
+                    user_info: UserInfo {
+                        email: user.email,
+                        username: user.display_name.unwrap_or("User".to_string()),
+                        token: "token".to_string()
+                    }
                 })),
             ))
         }

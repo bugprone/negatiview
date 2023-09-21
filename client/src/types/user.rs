@@ -11,5 +11,22 @@ pub struct SignUpRequest {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct LoginRequest {
     pub email: String,
-    pub password: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
+pub struct UserInfo {
+    pub email: String,
+    pub username: String,
+    pub token: String,
+}
+
+impl UserInfo {
+    pub fn is_authenticated(&self) -> bool {
+        !self.token.is_empty()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct UserInfoWrapper {
+    pub user_info: UserInfo,
 }

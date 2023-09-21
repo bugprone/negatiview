@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::fs;
 use tower::{ServiceBuilder, ServiceExt};
+use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
@@ -16,7 +17,7 @@ pub fn create_router(app_state: Arc<AppState>, opt: crate::Opt) -> Router {
         .route("/api/health", get(health_check_handler))
         .route("/api/users", get(user_list_handler))
         .route("/api/users", post(new_user_handler))
-        .route("/api/users/login", post(login_handler))
+        .route("/api/login", post(login_handler))
         .route("/api/posts", get(post_list_handler))
         .route("/api/posts", post(new_post_handler))
         .fallback_service(get(|req| async move {
@@ -50,6 +51,7 @@ pub fn create_router(app_state: Arc<AppState>, opt: crate::Opt) -> Router {
                     .expect("error response"),
             }
         }))
+        .layer(CorsLayer::permissive())
         .layer(ServiceBuilder::new().layer(TraceLayer::new_for_http()))
         .with_state(app_state)
 }

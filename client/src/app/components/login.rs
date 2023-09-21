@@ -1,50 +1,51 @@
-use gloo_net::http::Request;
-use wasm_bindgen_futures::spawn_local;
-use web_sys::HtmlInputElement;
+use web_sys::{HtmlInputElement};
 use yew::prelude::*;
-use yew_router::prelude::*;
+use yew_hooks::prelude::*;
 
-use crate::router::Route;
-use crate::types::user::LoginRequest;
+use crate::app::middleware::context::{use_user_context};
+use crate::app::middleware::request::{request_post};
+use crate::types::user::{LoginRequest, UserInfoWrapper};
 
 #[function_component(Login)]
 pub fn login_page() -> Html {
-    let navigator = use_navigator().unwrap();
-    let cloned_navigator = navigator.clone();
+    let user_ctx = use_user_context();
+    let login_info = use_state(LoginRequest::default);
 
-    let login_request = use_state(LoginRequest::default);
+    let login = {
+        let login_info = login_info.clone();
+        use_async(async move {
+            request_post::<LoginRequest, UserInfoWrapper>(
+                "/login".to_string(),
+                (*login_info).clone(),
+            ).await
+        })
+    };
+
+    use_effect_with_deps(
+        move |login| {
+            if let Some(resp) = &login.data {
+                user_ctx.login(resp.user_info.clone());
+            }
+            || ()
+        },
+        login.clone(),
+    );
 
     let onsubmit = {
-        let sign_up_req = login_request.clone();
+        let login = login.clone();
         Callback::from(move |e: SubmitEvent| {
             e.prevent_default();
-            let navigator = cloned_navigator.clone();
-            let request_data = (*sign_up_req).clone();
-
-            spawn_local(async move {
-                let req = Request::post("/api/users/login")
-                    .header("Content-Type", "application/json")
-                    .body(serde_json::to_string(&request_data).unwrap())
-                    .unwrap();
-
-                let resp = req.send().await.unwrap();
-
-                if resp.ok() {
-                    navigator.push(&Route::Home);
-                } else {
-                    log::error!("{:?}", resp);
-                }
-            })
+            login.run();
         })
     };
 
     let oninput_email = {
-        let register_req = login_request.clone();
+        let login_info = login_info.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*register_req).clone();
+            let mut info = (*login_info).clone();
             info.email = input.value();
-            register_req.set(info);
+            login_info.set(info);
         })
     };
 
@@ -57,7 +58,7 @@ pub fn login_page() -> Html {
                     <input
                         class="mt-1 p-2 border rounded w-full"
                         type="email"
-                        value={ login_request.email.clone() }
+                        value={ login_info.email.clone() }
                         oninput={ oninput_email }
                         />
                 </div>
