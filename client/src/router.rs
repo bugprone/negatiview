@@ -49,12 +49,12 @@ fn switch(route: Route) -> Html {
 #[function_component(App)]
 pub fn app() -> Html {
     html! {
-        <HashRouter>
+        <BrowserRouter>
             <UserContextProvider>
                 <Header />
                 <Switch<Route> render={switch} />
                 <Footer />
             </UserContextProvider>
-        </HashRouter>
+        </BrowserRouter>
     }
 }
