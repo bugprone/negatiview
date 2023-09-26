@@ -86,7 +86,7 @@ pub async fn new_user(
         "message": "User created".to_string(),
         "data": UserDto {
             email: user.email,
-            username: user.display_name,
+            display_name: user.display_name,
             token: "token".to_string()
         }
     });
@@ -114,7 +114,7 @@ pub async fn login(
                     "message": "Login successful",
                     "data": UserDto {
                         email: user.email,
-                        username: user.display_name.unwrap_or("User".to_string()),
+                        display_name: user.display_name.unwrap_or("User".to_string()),
                         token: "token".to_string()
                     }
                 })),

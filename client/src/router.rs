@@ -11,6 +11,7 @@ use crate::app::components::user_context_provider::UserContextProvider;
 use crate::app::health::Healthcheck;
 use crate::app::users::Users;
 use crate::app::home::Home;
+use crate::app::settings::Settings;
 
 #[derive(Clone, Routable, PartialEq)]
 pub enum Route {
@@ -24,6 +25,8 @@ pub enum Route {
     SignUp,
     #[at("/users/login")]
     Login,
+    #[at("/settings")]
+    Settings,
     #[at("/posts")]
     PostList,
     #[at("/posts/new")]
@@ -40,6 +43,7 @@ fn switch(route: Route) -> Html {
         Route::Users => html! { <Users /> },
         Route::SignUp => html! { <SignUp /> },
         Route::Login => html! { <Login /> },
+        Route::Settings => html! { <Settings /> },
         Route::PostList => html! { <PostList /> },
         Route::NewPost => html! { <NewPost /> },
         Route::NotFound => html! { <p class="text-red-500">{ "Page not found" }</p> },

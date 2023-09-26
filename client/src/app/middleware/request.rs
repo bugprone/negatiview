@@ -103,3 +103,10 @@ where
     request(reqwest::Method::POST, url, Some(body)).await
 }
 
+pub async fn request_put<B, T>(url: String, body: B) -> Result<T, Error>
+where
+    B: Serialize + std::fmt::Debug,
+    T: DeserializeOwned + 'static + std::fmt::Debug,
+{
+    request(reqwest::Method::PUT, url, Some(body)).await
+}

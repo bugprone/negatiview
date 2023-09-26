@@ -7,6 +7,9 @@ $ make down
 # launch
 $ sh dev.sh
 
+# create tailwind.css file
+$ cd client
+$ npx tailwindcss -o ./tailwind.css
 ```
 
 ## Database Stack

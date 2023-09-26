@@ -1,9 +1,8 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::app::middleware::context::use_user_context;
+use crate::app::middleware::context::{use_user_context, UserUseStateHandle};
 use crate::router::Route;
-use crate::types::user::UserDto;
 
 #[function_component(Header)]
 pub fn header() -> Html {
@@ -16,7 +15,7 @@ pub fn header() -> Html {
                 </div>
                 {
                     if user_ctx.is_authenticated() {
-                        logged_in_view((*user_ctx).clone())
+                        logged_in_view(&user_ctx)
                     } else {
                         logged_out_view()
                     }
@@ -48,7 +47,14 @@ fn logged_out_view() -> Html {
     }
 }
 
-fn logged_in_view(user_info: UserDto) -> Html {
+fn logged_in_view(user_ctx: &UserUseStateHandle) -> Html {
+    let on_logout = {
+        let user_ctx = user_ctx.clone();
+        Callback::from(move |_| {
+            user_ctx.logout();
+        })
+    };
+
     html! {
         <ul class="flex space-x-6">
             <li>
@@ -57,8 +63,13 @@ fn logged_in_view(user_info: UserDto) -> Html {
                 </Link<Route>>
             </li>
             <li>
-                <Link<Route> to={Route::Home} classes="text-black hover:underline font-semibold">
-                    { &user_info.username }
+                <button onclick={on_logout} class="text-black hover:underline">
+                    { "Logout" }
+                </button>
+            </li>
+            <li>
+                <Link<Route> to={Route::Settings} classes="text-black hover:underline font-semibold">
+                    { &user_ctx.display_name }
                 </Link<Route>>
             </li>
         </ul>

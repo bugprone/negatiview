@@ -27,7 +27,7 @@ pub struct SignUpDtoWrapper {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, Default)]
 pub struct UserDto {
     pub email: String,
-    pub username: String,
+    pub display_name: String,
     pub token: String,
 }
 
@@ -40,4 +40,18 @@ impl UserDto {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct UserDtoWrapper {
     pub data: UserDto,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct UserUpdateDto {
+    pub email: String,
+    pub display_name: String,
+    pub password: Option<String>,
+    // pub image: String,
+    // pub bio: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct UserUpdateDtoWrapper {
+    pub data: UserUpdateDto,
 }
