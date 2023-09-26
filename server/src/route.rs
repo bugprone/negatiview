@@ -1,7 +1,6 @@
-use crate::AppState;
 use axum::body::{boxed, Body};
 use axum::http::Response;
-use axum::{http::StatusCode, routing::get, routing::post, Router};
+use axum::{http::StatusCode, routing::get, routing::post, Router, middleware};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::fs;
@@ -10,16 +9,23 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::handler::{health_check, login, new_post, new_user, post_list, user_list};
+use crate::auth::auth;
+use crate::config::{AppState, Opt};
+use crate::handler::*;
 
-pub fn create_router(app_state: Arc<AppState>, opt: crate::Opt) -> Router {
+pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
     Router::new()
-        .route("/api/health", get(health_check))
-        .route("/api/users", get(user_list))
-        .route("/api/users", post(new_user))
-        .route("/api/login", post(login))
-        .route("/api/posts", get(post_list))
-        .route("/api/posts", post(new_post))
+        .route("/api/health", get(health_check_handler))
+        .route(
+            "/api/me",
+            get(me_handler)
+                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        )
+        .route("/api/users", get(user_list_handler))
+        .route("/api/users", post(new_user_handler))
+        .route("/api/login", post(login_handler))
+        .route("/api/posts", get(post_list_handler))
+        .route("/api/posts", post(new_post_handler))
         .fallback_service(get(|req| async move {
             match ServeDir::new(&opt.static_dir).oneshot(req).await {
                 Ok(res) => {

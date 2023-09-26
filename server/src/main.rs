@@ -6,10 +6,14 @@ use std::{
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
-use server::{AppState, Opt, router::create_router};
+use server::route::create_router;
+use server::config::{AppState, Config, Opt};
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
+    let config = Config::init();
     let opt = Opt::parse();
 
     if std::env::var("RUST_LOG").is_err() {
@@ -20,8 +24,6 @@ async fn main() {
     }
 
     tracing_subscriber::fmt::init();
-
-    dotenv().ok();
 
     let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = match PgPoolOptions::new()
@@ -38,8 +40,10 @@ async fn main() {
         opt.port,
     ));
 
-    let app_state = Arc::new(AppState { db: pool.clone() });
-    let app = create_router(app_state, opt);
+    let app = create_router(Arc::new(AppState {
+        db: pool.clone(),
+        env: config.clone(),
+    }), opt);
 
     log::info!("listening on http://{:?}", socket_addr);
 

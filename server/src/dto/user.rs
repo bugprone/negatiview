@@ -5,6 +5,8 @@ pub struct UserDto {
     pub email: String,
     pub display_name: String,
     pub token: String,
+    // pub image: String,
+    // pub bio: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
