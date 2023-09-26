@@ -61,7 +61,7 @@ pub async fn user_list(
 
 pub async fn new_user(
     State(data): State<Arc<AppState>>,
-    Json(user): Json<SignUpRequest>,
+    Json(user): Json<SignUpDto>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let query_result = sqlx::query!(
         "INSERT INTO users (email, first_name, last_name, display_name) VALUES ($1, $2, $3, $4) returning *",
@@ -81,10 +81,10 @@ pub async fn new_user(
         return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
     }
 
-    let json_response = json!(SignUpResponse {
-        status: "success".to_string(),
-        message: "Login successful".to_string(),
-        user_info: UserDto {
+    let json_response = json!({
+        "status": "success".to_string(),
+        "message": "User created".to_string(),
+        "data": UserDto {
             email: user.email,
             username: user.display_name,
             token: "token".to_string()
