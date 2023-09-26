@@ -4,15 +4,15 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::app::middleware::request::set_token;
 use crate::router::Route;
-use crate::types::user::UserInfo;
+use crate::types::user::UserDto;
 
 pub struct UserUseStateHandle {
-    user: UseStateHandle<UserInfo>,
+    user: UseStateHandle<UserDto>,
     navigator: Navigator,
 }
 
 impl UserUseStateHandle {
-    pub fn login(&self, value: UserInfo) {
+    pub fn login(&self, value: UserDto) {
         set_token(Some(value.token.clone()));
         self.user.set(value);
 
@@ -21,14 +21,14 @@ impl UserUseStateHandle {
 
     pub fn logout(&self) {
         set_token(None);
-        self.user.set(UserInfo::default());
+        self.user.set(UserDto::default());
 
         self.navigator.push(&Route::Home);
     }
 }
 
 impl Deref for UserUseStateHandle {
-    type Target = UserInfo;
+    type Target = UserDto;
 
     fn deref(&self) -> &Self::Target {
         &self.user
@@ -60,7 +60,7 @@ impl fmt::Debug for UserUseStateHandle {
 
 #[hook]
 pub fn use_user_context() -> UserUseStateHandle {
-    let user = use_context::<UseStateHandle<UserInfo>>().unwrap();
+    let user = use_context::<UseStateHandle<UserDto>>().unwrap();
     let navigator = use_navigator().unwrap();
 
     UserUseStateHandle { user, navigator }

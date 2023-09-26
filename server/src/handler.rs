@@ -4,12 +4,15 @@ use axum::response::IntoResponse;
 use axum::Json;
 use std::sync::Arc;
 use serde_json::{json, Value};
-
-use crate::model::*;
-use crate::schema::FilterOptions;
 use crate::AppState;
+use crate::dto::post::NewPostRequest;
+use crate::dto::user::*;
+use crate::model::post::PostModel;
+use crate::model::user::UserModel;
 
-pub async fn health_check_handler() -> impl IntoResponse {
+use crate::schema::FilterOptions;
+
+pub async fn health_check() -> impl IntoResponse {
     const MESSAGE: &str = "negatiview server is working!";
 
     let json_response = json!({
@@ -20,7 +23,7 @@ pub async fn health_check_handler() -> impl IntoResponse {
     Json(json_response)
 }
 
-pub async fn user_list_handler(
+pub async fn user_list(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -56,7 +59,7 @@ pub async fn user_list_handler(
     Ok(Json(json_response))
 }
 
-pub async fn new_user_handler(
+pub async fn new_user(
     State(data): State<Arc<AppState>>,
     Json(user): Json<SignUpRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -81,7 +84,7 @@ pub async fn new_user_handler(
     let json_response = json!(SignUpResponse {
         status: "success".to_string(),
         message: "Login successful".to_string(),
-        user_info: UserInfo {
+        user_info: UserDto {
             email: user.email,
             username: user.display_name,
             token: "token".to_string()
@@ -91,13 +94,13 @@ pub async fn new_user_handler(
     Ok((StatusCode::CREATED, Json(json_response)))
 }
 
-pub async fn login_handler(
+pub async fn login(
     State(data): State<Arc<AppState>>,
-    Json(user): Json<LoginRequest>,
+    Json(user): Json<LoginDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let query_result = sqlx::query!(
         "SELECT * FROM users WHERE email = $1",
-        user.email
+        user.data.email
     )
     .fetch_one(&data.db)
     .await;
@@ -106,10 +109,10 @@ pub async fn login_handler(
         Ok(user) => {
             Ok((
                 StatusCode::OK,
-                Json(json!(LoginResponse {
-                    status: "success".to_string(),
-                    message: "Login successful".to_string(),
-                    user_info: UserInfo {
+                Json(json!({
+                    "status": "success",
+                    "message": "Login successful",
+                    "data": UserDto {
                         email: user.email,
                         username: user.display_name.unwrap_or("User".to_string()),
                         token: "token".to_string()
@@ -122,14 +125,14 @@ pub async fn login_handler(
                 StatusCode::UNAUTHORIZED,
                 Json(json!({
                     "status": "fail",
-                    "message": "Login failed: User not found"
+                    "message": "Login failed: Invalid credentials",
                 })),
             ))
         }
     }
 }
 
-pub async fn post_list_handler(
+pub async fn post_list(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -165,7 +168,7 @@ pub async fn post_list_handler(
     Ok(Json(json_response))
 }
 
-pub async fn new_post_handler(
+pub async fn new_post(
     State(data): State<Arc<AppState>>,
     Json(post): Json<NewPostRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {

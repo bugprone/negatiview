@@ -10,16 +10,16 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::handler::{health_check_handler, login_handler, new_post_handler, new_user_handler, post_list_handler, user_list_handler};
+use crate::handler::{health_check, login, new_post, new_user, post_list, user_list};
 
 pub fn create_router(app_state: Arc<AppState>, opt: crate::Opt) -> Router {
     Router::new()
-        .route("/api/health", get(health_check_handler))
-        .route("/api/users", get(user_list_handler))
-        .route("/api/users", post(new_user_handler))
-        .route("/api/login", post(login_handler))
-        .route("/api/posts", get(post_list_handler))
-        .route("/api/posts", post(new_post_handler))
+        .route("/api/health", get(health_check))
+        .route("/api/users", get(user_list))
+        .route("/api/users", post(new_user))
+        .route("/api/login", post(login))
+        .route("/api/posts", get(post_list))
+        .route("/api/posts", post(new_post))
         .fallback_service(get(|req| async move {
             match ServeDir::new(&opt.static_dir).oneshot(req).await {
                 Ok(res) => {

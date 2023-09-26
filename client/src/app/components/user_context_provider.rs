@@ -3,7 +3,7 @@ use yew_hooks::prelude::*;
 
 use crate::app::middleware::error::Error;
 use crate::app::middleware::request::{get_token, request_get, set_token};
-use crate::types::user::{UserInfo, UserInfoWrapper};
+use crate::types::user::{UserDto, UserDtoWrapper};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
@@ -12,10 +12,10 @@ pub struct Props {
 
 #[function_component(UserContextProvider)]
 pub fn user_context_provider(props: &Props) -> Html {
-    let user_ctx = use_state(UserInfo::default);
+    let user_ctx = use_state(UserDto::default);
     let current_user =
         use_async(async move {
-            request_get::<UserInfoWrapper>("/users".to_string()).await
+            request_get::<UserDtoWrapper>("/users".to_string()).await
             }
         );
 
@@ -33,7 +33,7 @@ pub fn user_context_provider(props: &Props) -> Html {
         use_effect_with_deps(
             move |current_user| {
                 if let Some(resp) = &current_user.data {
-                    user_ctx.set(resp.user_info.clone());
+                    user_ctx.set(resp.data.clone());
                 }
 
                 if let Some(error) = &current_user.error {
@@ -49,8 +49,8 @@ pub fn user_context_provider(props: &Props) -> Html {
     }
 
     html! {
-        <ContextProvider<UseStateHandle<UserInfo>> context={user_ctx}>
+        <ContextProvider<UseStateHandle<UserDto >> context={user_ctx}>
             { for props.children.iter() }
-        </ContextProvider<UseStateHandle<UserInfo>>>
+        </ContextProvider<UseStateHandle<UserDto >>>
     }
 }

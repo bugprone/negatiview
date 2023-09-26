@@ -3,7 +3,7 @@ use yew_router::prelude::*;
 
 use crate::app::middleware::context::use_user_context;
 use crate::router::Route;
-use crate::types::user::UserInfo;
+use crate::types::user::UserDto;
 
 #[function_component(Header)]
 pub fn header() -> Html {
@@ -48,7 +48,7 @@ fn logged_out_view() -> Html {
     }
 }
 
-fn logged_in_view(user_info: UserInfo) -> Html {
+fn logged_in_view(user_info: UserDto) -> Html {
     html! {
         <ul class="flex space-x-6">
             <li>

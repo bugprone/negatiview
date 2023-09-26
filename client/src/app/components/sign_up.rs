@@ -4,18 +4,20 @@ use web_sys::HtmlInputElement;
 
 use crate::app::middleware::context::use_user_context;
 use crate::app::middleware::request::request_post;
-use crate::types::user::{SignUpRequest, UserInfoWrapper};
+use crate::types::user::{SignUpDto, SignUpDtoWrapper, UserDtoWrapper};
 
 #[function_component(SignUp)]
 pub fn sign_up_page() -> Html {
     let user_ctx = use_user_context();
-    let sign_up_info = use_state(SignUpRequest::default);
+    let sign_up_info = use_state(SignUpDto::default);
     let sign_up = {
         let sign_up_info = sign_up_info.clone();
         use_async(async move {
-            request_post::<SignUpRequest, UserInfoWrapper>(
+            request_post::<SignUpDtoWrapper, UserDtoWrapper>(
                 "/users".to_string(),
-                (*sign_up_info).clone(),
+                SignUpDtoWrapper {
+                    data: (*sign_up_info).clone(),
+                }
             ).await
         })
     };
@@ -23,7 +25,7 @@ pub fn sign_up_page() -> Html {
     use_effect_with_deps(
         move |sign_up| {
             if let Some(resp) = &sign_up.data {
-                user_ctx.login(resp.user_info.clone());
+                user_ctx.login(resp.data.clone());
             }
             || ()
         },

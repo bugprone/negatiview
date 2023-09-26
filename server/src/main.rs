@@ -1,38 +1,12 @@
 use clap::Parser;
 use dotenv::dotenv;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
-use std::sync::Arc;
+use sqlx::{postgres::PgPoolOptions};
 use std::{
+    sync::Arc,
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
-
-use crate::router::create_router;
-
-mod handler;
-mod model;
-mod router;
-mod schema;
-
-pub struct AppState {
-    db: Pool<Postgres>,
-}
-
-#[derive(Parser, Debug)]
-#[clap(name = "server")]
-pub struct Opt {
-    #[clap(short = 'a', long = "addr", default_value = "::1")]
-    addr: String,
-
-    #[clap(short = 'p', long = "port", default_value = "8080")]
-    port: u16,
-
-    #[clap(short = 'l', long = "log", default_value = "debug")]
-    log_level: String,
-
-    #[clap(long = "static-dir", default_value = "./dist")]
-    static_dir: String,
-}
+use server::{AppState, Opt, router::create_router};
 
 #[tokio::main]
 async fn main() {

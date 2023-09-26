@@ -4,19 +4,21 @@ use yew_hooks::prelude::*;
 
 use crate::app::middleware::context::{use_user_context};
 use crate::app::middleware::request::{request_post};
-use crate::types::user::{LoginRequest, UserInfoWrapper};
+use crate::types::user::{LoginDto, LoginDtoWrapper, UserDtoWrapper};
 
 #[function_component(Login)]
 pub fn login_page() -> Html {
     let user_ctx = use_user_context();
-    let login_info = use_state(LoginRequest::default);
+    let login_info = use_state(LoginDto::default);
 
     let login = {
         let login_info = login_info.clone();
         use_async(async move {
-            request_post::<LoginRequest, UserInfoWrapper>(
+            request_post::<LoginDtoWrapper, UserDtoWrapper>(
                 "/login".to_string(),
-                (*login_info).clone(),
+                LoginDtoWrapper {
+                    data: (*login_info).clone(),
+                },
             ).await
         })
     };
@@ -24,7 +26,7 @@ pub fn login_page() -> Html {
     use_effect_with_deps(
         move |login| {
             if let Some(resp) = &login.data {
-                user_ctx.login(resp.user_info.clone());
+                user_ctx.login(resp.data.clone());
             }
             || ()
         },
