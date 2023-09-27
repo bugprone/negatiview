@@ -3,16 +3,19 @@ use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use std::sync::Arc;
+use argon2::{Argon2, PasswordHasher};
+use argon2::password_hash::SaltString;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use serde_json::{json, Value};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{encode, EncodingKey, Header};
+use rand_core::OsRng;
 
 use crate::config::AppState;
 use crate::dto::post::NewPostRequest;
 use crate::dto::user::*;
 use crate::model::post::PostModel;
-use crate::model::user::{TokenClaims, UserModel};
+use crate::model::user::{TokenClaims, User};
 use crate::schema::FilterOptions;
 
 pub async fn health_check_handler() -> impl IntoResponse {
@@ -27,14 +30,16 @@ pub async fn health_check_handler() -> impl IntoResponse {
 }
 
 pub async fn me_handler(
-    Extension(user): Extension<UserModel>,
+    Extension(user): Extension<User>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let json_response = json!({
         "status": "success",
         "data": UserDto {
             email: user.email,
-            display_name: user.display_name.unwrap_or("User".to_string()),
-            token: "token".to_string()
+            display_name: user.display_name,
+            token: "token".to_string(), // TODO: return token
+            biography: user.biography.unwrap_or_default(),
+            profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
     });
 
@@ -52,7 +57,7 @@ pub async fn user_list_handler(
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
     let query_result = sqlx::query_as!(
-        UserModel,
+        User,
         "SELECT * FROM users LIMIT $1 OFFSET $2",
         limit as i32,
         offset as i32
@@ -80,33 +85,45 @@ pub async fn user_list_handler(
 
 pub async fn new_user_handler(
     State(data): State<Arc<AppState>>,
-    Json(user): Json<SignUpDto>,
+    Json(body): Json<SignUpDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let query_result = sqlx::query!(
-        "INSERT INTO users (email, first_name, last_name, display_name) VALUES ($1, $2, $3, $4) returning *",
-        user.email,
-        user.first_name,
-        user.last_name,
-        user.display_name
+    let req = body.data;
+    let salt = SaltString::generate(&mut OsRng);
+    let hashed_password = Argon2::default()
+        .hash_password(req.password.as_bytes(), &salt)
+        .map_err(|err| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while hashing password: {err}")
+            })))
+        })
+        .map(|hash| hash.to_string())?;
+
+    let user = sqlx::query_as!(
+        User,
+        "INSERT INTO users (email, password, display_name) VALUES ($1, $2, $3) returning *",
+        req.email,
+        hashed_password,
+        req.display_name
     )
     .fetch_one(&data.db)
-    .await;
-
-    if query_result.is_err() {
-        let error_response = json!({
+    .await
+    .map_err(|err| {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
             "status": "fail",
-            "message": "Something bad happened while creating user",
-        });
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-    }
+            "message": format!("Something bad happened while creating user: {err}")
+        })))
+    })?;
 
     let json_response = json!({
-        "status": "success".to_string(),
-        "message": "User created".to_string(),
+        "status": "success",
+        "message": "User created",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: "token".to_string()
+            token: "token".to_string(), // TODO: generate token
+            biography: user.biography.unwrap_or_default(),
+            profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
     });
 
@@ -118,7 +135,7 @@ pub async fn login_handler(
     Json(user): Json<LoginDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user = sqlx::query_as!(
-        UserModel,
+        User,
         "SELECT * FROM users WHERE email = $1",
         user.data.email
     )
@@ -139,6 +156,30 @@ pub async fn login_handler(
             (StatusCode::UNAUTHORIZED, Json(error_response))
         })?;
 
+    let token = generate_token(&data, user.clone());
+    let cookie = Cookie::build("token", token.to_owned())
+        .path("/")
+        .max_age(time::Duration::minutes(data.env.jwt_expires_in))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+
+    let mut response = Response::new(json!({
+        "status": "success",
+        "message": "Login successful",
+        "data": UserDto {
+            email: user.email,
+            display_name: user.display_name,
+            token: token,
+            biography: user.biography.unwrap_or_default(),
+            profile_image_url: user.profile_image_url.unwrap_or_default(),
+        },
+    }).to_string());
+    response.headers_mut().insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
+    Ok(response)
+}
+
+fn generate_token(data: &Arc<AppState>, user: User) -> String {
     let now = Utc::now();
     let iat = now.timestamp() as usize;
     let exp = (now + Duration::minutes(data.env.jwt_expires_in)).timestamp() as usize;
@@ -154,25 +195,7 @@ pub async fn login_handler(
         &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
     )
         .unwrap();
-
-    let cookie = Cookie::build("token", token.to_owned())
-        .path("/")
-        .max_age(time::Duration::minutes(data.env.jwt_expires_in))
-        .same_site(SameSite::Lax)
-        .http_only(true)
-        .finish();
-
-    let mut response = Response::new(json!({
-        "status": "success",
-        "message": "Login successful",
-        "data": UserDto {
-            email: user.email,
-            display_name: user.display_name.unwrap_or("User".to_string()),
-            token: token,
-        },
-    }).to_string());
-    response.headers_mut().insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
-    Ok(response)
+    token
 }
 
 pub async fn post_list_handler(

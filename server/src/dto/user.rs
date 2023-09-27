@@ -5,8 +5,8 @@ pub struct UserDto {
     pub email: String,
     pub display_name: String,
     pub token: String,
-    // pub image: String,
-    // pub bio: String,
+    pub biography: String,
+    pub profile_image_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,8 +23,7 @@ pub struct LoginDtoWrapper {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct SignUpDto {
     pub email: String,
-    pub first_name: String,
-    pub last_name: String,
+    pub password: String,
     pub display_name: String,
 }
 

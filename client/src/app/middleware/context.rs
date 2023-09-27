@@ -3,7 +3,7 @@ use std::ops::Deref;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use crate::app::middleware::request::set_token;
-use crate::router::Route;
+use crate::route::Route;
 use crate::types::user::UserDto;
 
 pub struct UserUseStateHandle {

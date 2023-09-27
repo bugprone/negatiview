@@ -42,8 +42,8 @@ pub fn setting() -> Html {
                         email: user.data.email.clone(),
                         display_name: user.data.display_name.clone(),
                         password: None,
-                        // image: user.data.image.clone().unwrap_or_default(),
-                        // bio: user.data.bio.clone().unwrap_or_default(),
+                        biography: user.data.biography.clone(),
+                        profile_image_url: user.data.profile_image_url.clone(),
                     });
                 }
                 || ()
@@ -74,16 +74,6 @@ pub fn setting() -> Html {
         })
     };
 
-    // let oninput_image = {
-    //     let update_info = update_info.clone();
-    //     Callback::from(move |e: InputEvent| {
-    //         let input: HtmlInputElement = e.target_unchecked_into();
-    //         let mut info = (*update_info).clone();
-    //         info.image = input.value();
-    //         update_info.set(info);
-    //     })
-    // };
-
     let oninput_display_name = {
         let update_info = update_info.clone();
         Callback::from(move |e: InputEvent| {
@@ -93,16 +83,6 @@ pub fn setting() -> Html {
             update_info.set(info);
         })
     };
-
-    // let oninput_bio = {
-    //     let update_info = update_info.clone();
-    //     Callback::from(move |e: InputEvent| {
-    //         let input: HtmlInputElement = e.target_unchecked_into();
-    //         let mut info = (*update_info).clone();
-    //         info.bio = input.value();
-    //         update_info.set(info);
-    //     })
-    // };
 
     let oninput_email = {
         let update_info = update_info.clone();
@@ -122,22 +102,34 @@ pub fn setting() -> Html {
         })
     };
 
+    let oninput_biography = {
+        let update_info = update_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*update_info).clone();
+            info.biography = input.value();
+            update_info.set(info);
+        })
+    };
+
+    let oninput_profile_image_url = {
+        let update_info = update_info.clone();
+        Callback::from(move |e: InputEvent| {
+            let input: HtmlInputElement = e.target_unchecked_into();
+            let mut info = (*update_info).clone();
+            info.profile_image_url = input.value();
+            update_info.set(info);
+        })
+    };
+
     html! {
         <div class="max-w-md mx-auto mt-12">
             <h1 class="text-center text-xl font-semibold">{ "My Settings" }</h1>
             <form onsubmit={onsubmit} class="mt-4">
                 <div class="mb-3">
-                    <label for="display_name" class="block text-sm font-medium text-gray-700">{"Display Name"}</label>
-                    <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
-                        type="text"
-                        placeholder="Display Name"
-                        value={update_info.display_name.clone()}
-                        oninput={oninput_display_name}
-                    />
-                </div>
-                <div class="mb-3">
-                    <label for="email" class="block text-sm font-medium text-gray-700">{ "Email" }</label>
+                    <label for="email" class="block text-sm font-medium text-gray-700">
+                        { "Email" }
+                    </label>
                     <input
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="email"
@@ -147,13 +139,52 @@ pub fn setting() -> Html {
                     />
                 </div>
                 <div class="mb-3">
-                    <label for="password" class="block text-sm font-medium text-gray-700">{ "New Password"}</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700">
+                        { "New Password"}
+                    </label>
                     <input
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="password"
                         placeholder="New Password"
                         value={(*password).clone()}
                         oninput={oninput_password}
+                    />
+                </div>
+                <div class="mb-3">
+                    <label for="display_name" class="block text-sm font-medium text-gray-700">
+                        { "Display Name" }
+                    </label>
+                    <input
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        type="text"
+                        placeholder="Display Name"
+                        value={update_info.display_name.clone()}
+                        oninput={oninput_display_name}
+                    />
+                </div>
+                <div class="mb-3">
+                    <label for="biography" class="block text-sm font-medium text-gray-700">
+                        { "Bio" }
+                    </label>
+                    <input
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        type="text"
+                        rows="3"
+                        placeholder="About Yourself"
+                        value={update_info.biography.clone()}
+                        oninput={oninput_biography}
+                    />
+                </div>
+                <div class="mb-3">
+                    <label for="profile_image_url" class="block text-sm font-medium text-gray-700">
+                        { "Profile Image URL" }
+                    </label>
+                    <input
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        type="text"
+                        placeholder="URL to Profile Image"
+                        value={update_info.profile_image_url.clone()}
+                        oninput={oninput_profile_image_url}
                     />
                 </div>
                 <div class="mb-3 flex justify-center">

@@ -9,23 +9,17 @@ use axum::{
 use axum::http::header;
 use axum_extra::extract::cookie::CookieJar;
 use jsonwebtoken::{decode, DecodingKey, Validation};
-use serde::Serialize;
+use serde_json::{json, Value};
 
 use crate::config::AppState;
-use crate::model::user::{TokenClaims, UserModel};
-
-#[derive(Debug, Serialize)]
-pub struct ErrorResponse {
-    pub status: &'static str,
-    pub message: String,
-}
+use crate::model::user::{TokenClaims, User};
 
 pub async fn auth<B>(
     cookie_jar: CookieJar,
     State(data): State<Arc<AppState>>,
     mut req: Request<B>,
     next: Next<B>,
-) -> Result<impl IntoResponse, (StatusCode, Json<ErrorResponse>)> {
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let token = cookie_jar
         .get("token")
         .map(|cookie| cookie.value().to_string())
@@ -43,11 +37,10 @@ pub async fn auth<B>(
         });
 
     let token = token.ok_or_else(|| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "Token not found".to_string(),
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        (StatusCode::UNAUTHORIZED, Json(json!({
+            "status": "fail",
+            "message": "Token not found",
+        })))
     })?;
 
     let claims = decode::<TokenClaims>(
@@ -56,40 +49,35 @@ pub async fn auth<B>(
         &Validation::default()
     )
         .map_err(|_| {
-            let json_error = ErrorResponse {
-                status: "fail",
-                message: "Invalid token".to_string(),
-            };
-            (StatusCode::UNAUTHORIZED, Json(json_error))
+            (StatusCode::UNAUTHORIZED, Json(json!({
+                "status": "fail",
+                "message": "Invalid token",
+            })))
         })?
         .claims;
 
-    let user_id = (&claims.sub).parse::<i32>().map_err(|_| {
-        let json_error = ErrorResponse {
-
-            status: "fail",
-            message: "Invalid token".to_string(),
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+    let user_id = uuid::Uuid::parse_str(&claims.sub).map_err(|_| {
+        (StatusCode::UNAUTHORIZED, Json(json!({
+            "status": "fail",
+            "message": "Invalid token",
+        })))
     })?;
 
-    let user = sqlx::query_as!(UserModel, "SELECT * FROM users WHERE id = $1", user_id)
+    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
         .fetch_optional(&data.db)
         .await
         .map_err(|err| {
-            let json_error = ErrorResponse {
-                status: "fail",
-                message: format!("Error fetching user from database: {err}"),
-            };
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json_error))
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "status": "fail",
+                "message": format!("Error fetching user from database: {err}"),
+            })))
         })?;
 
     let user = user.ok_or_else(|| {
-        let json_error = ErrorResponse {
-            status: "fail",
-            message: "User not found".to_string(),
-        };
-        (StatusCode::UNAUTHORIZED, Json(json_error))
+        (StatusCode::UNAUTHORIZED, Json(json!({
+            "status": "fail",
+            "message": "User not found",
+        })))
     })?;
 
     req.extensions_mut().insert(user);

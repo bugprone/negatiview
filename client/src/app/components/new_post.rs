@@ -5,7 +5,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
 
-use crate::router::Route;
+use crate::route::Route;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CreatePostRequest {

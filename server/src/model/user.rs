@@ -3,14 +3,13 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 #[derive(Debug, FromRow, Deserialize, Serialize, Clone)]
-pub struct UserModel {
-    pub id: i32,
-    pub google_id: Option<String>,
+pub struct User {
+    pub id: uuid::Uuid,
     pub email: String,
-    pub display_name: Option<String>,
-    pub first_name: Option<String>,
-    pub last_name: Option<String>,
-    pub profile_picture_url: Option<String>,
+    pub display_name: String,
+    pub password: String,
+    pub biography: Option<String>,
+    pub profile_image_url: Option<String>,
     pub created_at: Option<DateTime<Utc>>,
     pub updated_at: Option<DateTime<Utc>>,
 }

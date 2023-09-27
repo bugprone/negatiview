@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct LoginDto {
     pub email: String,
-    pub password: Option<String>,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -14,8 +14,7 @@ pub struct LoginDtoWrapper {
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct SignUpDto {
     pub email: String,
-    pub first_name: String,
-    pub last_name: String,
+    pub password: String,
     pub display_name: String,
 }
 
@@ -29,8 +28,8 @@ pub struct UserDto {
     pub email: String,
     pub display_name: String,
     pub token: String,
-    // pub image: String,
-    // pub bio: String,
+    pub biography: String,
+    pub profile_image_url: String,
 }
 
 impl UserDto {
@@ -49,8 +48,8 @@ pub struct UserUpdateDto {
     pub email: String,
     pub display_name: String,
     pub password: Option<String>,
-    // pub image: String,
-    // pub bio: String,
+    pub biography: String,
+    pub profile_image_url: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
