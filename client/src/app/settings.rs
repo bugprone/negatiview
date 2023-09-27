@@ -163,19 +163,6 @@ pub fn setting() -> Html {
                     />
                 </div>
                 <div class="mb-4">
-                    <label for="biography" class="block text-sm font-medium text-gray-700">
-                        { "Bio" }
-                    </label>
-                    <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
-                        type="text"
-                        rows="3"
-                        placeholder="About Yourself"
-                        value={update_info.biography.clone()}
-                        oninput={oninput_biography}
-                    />
-                </div>
-                <div class="mb-4">
                     <label for="profile_image_url" class="block text-sm font-medium text-gray-700">
                         { "Profile Image" }
                     </label>
@@ -185,6 +172,18 @@ pub fn setting() -> Html {
                         placeholder="URL to Profile Image"
                         value={update_info.profile_image_url.clone()}
                         oninput={oninput_profile_image_url}
+                    />
+                </div>
+                <div class="mb-4">
+                    <label for="biography" class="block text-sm font-medium text-gray-700">
+                        { "Bio" }
+                    </label>
+                    <textarea
+                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        type="text"
+                        placeholder="About Yourself"
+                        value={update_info.biography.clone()}
+                        oninput={oninput_biography}
                     />
                 </div>
                 <div class="flex justify-center">
