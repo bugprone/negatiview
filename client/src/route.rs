@@ -13,7 +13,7 @@ use crate::app::users::Users;
 use crate::app::home::Home;
 use crate::app::settings::Settings;
 
-#[derive(Clone, Routable, PartialEq)]
+#[derive(Routable, Debug, Clone, PartialEq, Eq)]
 pub enum Route {
     #[at("/")]
     Home,

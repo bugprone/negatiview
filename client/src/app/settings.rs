@@ -58,7 +58,7 @@ pub fn setting() -> Html {
         use_effect_with_deps(
             move |update| {
                 if let Some(user) = &update.data {
-                    user_ctx.login(user.data.clone());
+                    user_ctx.login_without_redirection(user.data.clone());
                 }
                 || ()
             },
@@ -123,10 +123,10 @@ pub fn setting() -> Html {
     };
 
     html! {
-        <div class="max-w-md mx-auto mt-12">
+        <div class="max-w-md mx-auto mt-12 mb-12">
             <h1 class="text-center text-xl font-semibold">{ "My Settings" }</h1>
             <form onsubmit={onsubmit} class="mt-4">
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="email" class="block text-sm font-medium text-gray-700">
                         { "Email" }
                     </label>
@@ -138,7 +138,7 @@ pub fn setting() -> Html {
                         oninput={oninput_email}
                     />
                 </div>
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="password" class="block text-sm font-medium text-gray-700">
                         { "New Password"}
                     </label>
@@ -150,7 +150,7 @@ pub fn setting() -> Html {
                         oninput={oninput_password}
                     />
                 </div>
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="display_name" class="block text-sm font-medium text-gray-700">
                         { "Display Name" }
                     </label>
@@ -162,7 +162,7 @@ pub fn setting() -> Html {
                         oninput={oninput_display_name}
                     />
                 </div>
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="biography" class="block text-sm font-medium text-gray-700">
                         { "Bio" }
                     </label>
@@ -175,9 +175,9 @@ pub fn setting() -> Html {
                         oninput={oninput_biography}
                     />
                 </div>
-                <div class="mb-3">
+                <div class="mb-4">
                     <label for="profile_image_url" class="block text-sm font-medium text-gray-700">
-                        { "Profile Image URL" }
+                        { "Profile Image" }
                     </label>
                     <input
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
@@ -187,12 +187,11 @@ pub fn setting() -> Html {
                         oninput={oninput_profile_image_url}
                     />
                 </div>
-                <div class="mb-3 flex justify-center">
-                    <button class="px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:outline-none"
+                <div class="flex justify-center">
+                    <button class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="submit"
-                        disabled={user.loading || update.loading}
-                    >
-                        {"Update Settings"}
+                        disabled={user.loading || update.loading}>
+                        {"Update"}
                     </button>
                 </div>
             </form>

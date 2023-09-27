@@ -19,6 +19,11 @@ impl UserUseStateHandle {
         self.navigator.push(&Route::Home);
     }
 
+    pub fn login_without_redirection(&self, value: UserDto) {
+        set_token(Some(value.token.clone()));
+        self.data.set(value);
+    }
+
     pub fn logout(&self) {
         set_token(None);
         self.data.set(UserDto::default());

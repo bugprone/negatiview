@@ -3,7 +3,7 @@ use axum::http::{header, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use std::sync::Arc;
-use argon2::{Argon2, PasswordHasher};
+use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::SaltString;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use serde_json::{json, Value};
@@ -18,7 +18,7 @@ use crate::model::post::PostModel;
 use crate::model::user::{TokenClaims, User};
 use crate::schema::FilterOptions;
 
-pub async fn health_check_handler() -> impl IntoResponse {
+pub async fn health_check() -> impl IntoResponse {
     const MESSAGE: &str = "negatiview server is working!";
 
     let json_response = json!({
@@ -29,15 +29,17 @@ pub async fn health_check_handler() -> impl IntoResponse {
     Json(json_response)
 }
 
-pub async fn me_handler(
+pub async fn me(
     Extension(user): Extension<User>,
+    State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let token = generate_token(&data, user.clone());
     let json_response = json!({
         "status": "success",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: "token".to_string(), // TODO: return token
+            token: token, // TODO: return stored token
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -46,8 +48,75 @@ pub async fn me_handler(
     Ok(Json(json_response))
 }
 
+pub async fn update_me(
+    Extension(user): Extension<User>,
+    State(data): State<Arc<AppState>>,
+    Json(body): Json<UserUpdateDtoWrapper>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let req = body.data;
 
-pub async fn user_list_handler(
+    let query = match req.password {
+        Some(password) => {
+            let hashed_password = get_hashed_password(&password)?;
+            sqlx::query_as::<_, User>(
+                r#"
+                UPDATE users
+                SET email = $1, display_name = $2, biography = $3, profile_image_url = $4, password = $5
+                WHERE id = $6
+                RETURNING *
+                "#,
+            )
+                .bind(req.email)
+                .bind(req.display_name)
+                .bind(req.biography)
+                .bind(req.profile_image_url)
+                .bind(hashed_password)
+                .bind(user.id)
+        },
+        None => {
+            sqlx::query_as::<_, User>(
+                r#"
+                UPDATE users
+                SET email = $1, display_name = $2, biography = $3, profile_image_url = $4
+                WHERE id = $5
+                RETURNING *
+                "#,
+            )
+                .bind(req.email)
+                .bind(req.display_name)
+                .bind(req.biography)
+                .bind(req.profile_image_url)
+                .bind(user.id)
+        }
+    };
+
+    let user = query
+        .fetch_one(&data.db)
+        .await
+        .map_err(|err| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while updating user: {err}")
+            })))
+        })?;
+
+    let token = generate_token(&data, user.clone()); // TODO: return stored token
+    let json_response = json!({
+        "status": "success",
+        "message": "User updated successfully",
+        "data": UserDto {
+            email: user.email,
+            display_name: user.display_name,
+            token: token,
+            biography: user.biography.unwrap_or_default(),
+            profile_image_url: user.profile_image_url.unwrap_or_default(),
+        }
+    });
+
+    Ok((StatusCode::OK, Json(json_response)))
+}
+
+pub async fn user_list(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -83,21 +152,12 @@ pub async fn user_list_handler(
     Ok(Json(json_response))
 }
 
-pub async fn new_user_handler(
+pub async fn new_user(
     State(data): State<Arc<AppState>>,
     Json(body): Json<SignUpDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let req = body.data;
-    let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
-        .hash_password(req.password.as_bytes(), &salt)
-        .map_err(|err| {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-                "status": "fail",
-                "message": format!("Something bad happened while hashing password: {err}")
-            })))
-        })
-        .map(|hash| hash.to_string())?;
+    let hashed_password = get_hashed_password(&req.password)?;
 
     let user = sqlx::query_as!(
         User,
@@ -115,13 +175,15 @@ pub async fn new_user_handler(
         })))
     })?;
 
+    let token = generate_token(&data, user.clone()); // TODO: store token
+
     let json_response = json!({
         "status": "success",
         "message": "User created",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: "token".to_string(), // TODO: generate token
+            token: token,
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -130,14 +192,29 @@ pub async fn new_user_handler(
     Ok((StatusCode::CREATED, Json(json_response)))
 }
 
-pub async fn login_handler(
+fn get_hashed_password(password: &str) -> Result<String, (StatusCode, Json<Value>)> {
+    let salt = SaltString::generate(&mut OsRng);
+    let hashed_password = Argon2::default()
+        .hash_password(password.as_bytes(), &salt)
+        .map_err(|err| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while hashing password: {err}")
+            })))
+        })
+        .map(|hash| hash.to_string())?;
+    Ok(hashed_password)
+}
+
+pub async fn login(
     State(data): State<Arc<AppState>>,
-    Json(user): Json<LoginDtoWrapper>,
+    Json(body): Json<LoginDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let req = body.data;
     let user = sqlx::query_as!(
         User,
         "SELECT * FROM users WHERE email = $1",
-        user.data.email
+        req.email
     )
         .fetch_optional(&data.db)
         .await
@@ -155,6 +232,20 @@ pub async fn login_handler(
             });
             (StatusCode::UNAUTHORIZED, Json(error_response))
         })?;
+
+    let is_valid = match PasswordHash::new(&user.password){
+        Ok(parsed_hash) => Argon2::default()
+            .verify_password(req.password.as_bytes(), &parsed_hash)
+            .map_or(false, |_| true),
+        Err(_) => false,
+    };
+
+    if !is_valid {
+        return Err((StatusCode::UNAUTHORIZED, Json(json!({
+            "status": "fail",
+            "message": "Login failed: Invalid credentials"
+        }))));
+    }
 
     let token = generate_token(&data, user.clone());
     let cookie = Cookie::build("token", token.to_owned())
@@ -198,7 +289,7 @@ fn generate_token(data: &Arc<AppState>, user: User) -> String {
     token
 }
 
-pub async fn post_list_handler(
+pub async fn post_list(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -234,7 +325,7 @@ pub async fn post_list_handler(
     Ok(Json(json_response))
 }
 
-pub async fn new_post_handler(
+pub async fn new_post(
     State(data): State<Arc<AppState>>,
     Json(post): Json<NewPostRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {

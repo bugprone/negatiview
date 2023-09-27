@@ -1,8 +1,8 @@
 # How to Launch
 ## docker-compose
 ```bash
-# docker-compose
 $ make up
+
 $ make down
 ```
 
