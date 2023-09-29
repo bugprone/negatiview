@@ -8,6 +8,7 @@ use argon2::password_hash::SaltString;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use serde_json::{json, Value};
 use rand_core::OsRng;
+use redis::aio::Connection;
 use redis::AsyncCommands;
 
 use crate::config::AppState;
@@ -32,15 +33,17 @@ pub async fn health_check() -> impl IntoResponse {
 
 pub async fn me(
     Extension(jwt_claims): Extension<JwtClaims>,
+    State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user = jwt_claims.user;
+    let access_token = find_access_token_in_redis(&data, jwt_claims.access_token_uuid).await?;
 
     let json_response = json!({
         "status": "success",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: "token".to_string(), // TODO: return stored token
+            access_token,
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -50,10 +53,11 @@ pub async fn me(
 }
 
 pub async fn update_me(
-    Extension(user): Extension<User>,
+    Extension(jwt_claims): Extension<JwtClaims>,
     State(data): State<Arc<AppState>>,
     Json(body): Json<UserUpdateDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user = jwt_claims.user;
     let req = body.data;
 
     let query = match req.password {
@@ -101,13 +105,15 @@ pub async fn update_me(
             })))
         })?;
 
+    let access_token = find_access_token_in_redis(&data, jwt_claims.access_token_uuid).await?;
+
     let json_response = json!({
         "status": "success",
         "message": "User updated successfully",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: "token".to_string(), // TODO: return stored token
+            access_token,
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -175,24 +181,19 @@ pub async fn new_user(
         })))
     })?;
 
-    let access_token_data = issue_token(
+    let access_token_data = issue_access_token(
         user.id,
         data.env.access_token_max_age,
         data.env.access_token_private_key.to_owned(),
     )?;
-    let refresh_token_data = issue_token(
+    let refresh_token_data = issue_access_token(
         user.id,
         data.env.refresh_token_max_age,
         data.env.refresh_token_private_key.to_owned(),
     )?;
 
-    save_token_to_redis(&data, &access_token_data, data.env.access_token_max_age).await?;
-    save_token_to_redis(
-        &data,
-        &refresh_token_data,
-        data.env.refresh_token_max_age,
-    )
-    .await?;
+    save_access_token_to_redis(&data, &access_token_data, data.env.access_token_max_age).await?;
+    save_access_token_to_redis(&data, &refresh_token_data, data.env.refresh_token_max_age).await?;
 
     let headers = set_cookies(data, &access_token_data, &refresh_token_data);
 
@@ -202,7 +203,7 @@ pub async fn new_user(
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: access_token_data.token.unwrap(),
+            access_token: access_token_data.access_token.unwrap(),
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -221,7 +222,7 @@ pub async fn new_user(
 fn set_cookies(data: Arc<AppState>, access_token_data: &TokenData, refresh_token_data: &TokenData) -> HeaderMap {
     let access_cookie = Cookie::build(
         "access_token",
-        access_token_data.token.clone().unwrap_or_default(),
+        access_token_data.access_token.clone().unwrap_or_default(),
     )
         .path("/")
         .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
@@ -231,7 +232,7 @@ fn set_cookies(data: Arc<AppState>, access_token_data: &TokenData, refresh_token
 
     let refresh_cookie = Cookie::build(
         "refresh_token",
-        refresh_token_data.token.clone().unwrap_or_default(),
+        refresh_token_data.access_token.clone().unwrap_or_default(),
     )
         .path("/")
         .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
@@ -308,19 +309,19 @@ pub async fn login(
         }))));
     }
 
-    let access_token_data = issue_token(
+    let access_token_data = issue_access_token(
         user.id,
         data.env.access_token_max_age,
         data.env.access_token_private_key.to_owned(),
     )?;
-    let refresh_token_data = issue_token(
+    let refresh_token_data = issue_access_token(
         user.id,
         data.env.refresh_token_max_age,
         data.env.refresh_token_private_key.to_owned(),
     )?;
 
-    save_token_to_redis(&data, &access_token_data, data.env.access_token_max_age).await?;
-    save_token_to_redis(
+    save_access_token_to_redis(&data, &access_token_data, data.env.access_token_max_age).await?;
+    save_access_token_to_redis(
         &data,
         &refresh_token_data,
         data.env.refresh_token_max_age,
@@ -334,7 +335,7 @@ pub async fn login(
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: access_token_data.token.unwrap(),
+            access_token: access_token_data.access_token.unwrap(),
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -414,11 +415,11 @@ pub async fn new_post(
     Ok((StatusCode::CREATED, Json(json_response)))
 }
 
-fn issue_token(
+fn issue_access_token(
     user_id: uuid::Uuid,
     max_age: i64,
     private_key: String,
-) -> Result<TokenData, (StatusCode, Json<serde_json::Value>)> {
+) -> Result<TokenData, (StatusCode, Json<Value>)> {
     token::generate_token(user_id, max_age, private_key).map_err(|err| {
         (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
             "status": "fail",
@@ -427,25 +428,17 @@ fn issue_token(
     })
 }
 
-async fn save_token_to_redis(
+async fn save_access_token_to_redis(
     data: &Arc<AppState>,
     token_data: &TokenData,
     max_age: i64,
-) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
-    let mut redis_client = data.redis_client
-        .get_async_connection()
-        .await
-        .map_err(|err| {
-            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
-                "status": "fail",
-                "message": format!("Something bad happened while connecting to redis: {err}")
-            })))
-        })?;
+) -> Result<(), (StatusCode, Json<Value>)> {
+    let mut redis_client = get_redis_client(data).await?;
 
     redis_client
         .set_ex(
             token_data.token_uuid.to_string(),
-            token_data.user_id.to_string(),
+            token_data.access_token.as_ref(),
             (max_age * 60) as usize,
         )
         .await
@@ -457,4 +450,36 @@ async fn save_token_to_redis(
         })?;
 
     Ok(())
+}
+
+async fn find_access_token_in_redis(
+    data: &Arc<AppState>,
+    access_token_uuid: uuid::Uuid,
+) -> Result<String, (StatusCode, Json<Value>)> {
+    let mut redis_client = get_redis_client(data).await?;
+
+    let access_token = redis_client
+        .get::<_, String>(access_token_uuid.to_string())
+        .await
+        .map_err(|err| {
+            (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while fetching token from redis: {err}")
+            })))
+        })?;
+
+    Ok(access_token)
+}
+
+async fn get_redis_client(data: &Arc<AppState>) -> Result<Connection, (StatusCode, Json<Value>)> {
+    let redis_client = data.redis_client
+        .get_async_connection()
+        .await
+        .map_err(|err| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while connecting to redis: {err}")
+            })))
+        })?;
+    Ok(redis_client)
 }

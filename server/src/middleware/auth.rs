@@ -80,7 +80,7 @@ pub async fn auth<B>(
             })))
         })?;
 
-    let redis_token_user_id = redis_client
+    let access_token_in_redis = redis_client
         .get::<_, String>(access_token_uuid.clone().to_string())
         .await
         .map_err(|err| {
@@ -90,15 +90,14 @@ pub async fn auth<B>(
             })))
         })?;
 
-    let user_id = Uuid::parse_str(&redis_token_user_id)
-        .map_err(|_| {
-            (StatusCode::UNAUTHORIZED, Json(json!({
-                "status": "fail",
-                "message": "Invalid token",
-            })))
-        })?;
+    if access_token_in_redis != access_token {
+        return Err((StatusCode::UNAUTHORIZED, Json(json!({
+            "status": "fail",
+            "message": "Invalid access token",
+        }))));
+    }
 
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", access_token_data.user_id)
         .fetch_optional(&data.db)
         .await
         .map_err(|err| {

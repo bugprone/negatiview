@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct UserDto {
     pub email: String,
     pub display_name: String,
-    pub token: String,
+    pub access_token: String,
     pub biography: String,
     pub profile_image_url: String,
 }

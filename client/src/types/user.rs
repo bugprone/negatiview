@@ -27,14 +27,14 @@ pub struct SignUpDtoWrapper {
 pub struct UserDto {
     pub email: String,
     pub display_name: String,
-    pub token: String,
+    pub access_token: String,
     pub biography: String,
     pub profile_image_url: String,
 }
 
 impl UserDto {
     pub fn is_authenticated(&self) -> bool {
-        !self.token.is_empty()
+        !self.access_token.is_empty()
     }
 }
 

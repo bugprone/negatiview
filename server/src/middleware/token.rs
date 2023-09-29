@@ -7,7 +7,7 @@ pub struct TokenData {
     pub user_id: Uuid,
     pub token_uuid: Uuid,
     pub expires_in: Option<i64>,
-    pub token: Option<String>,
+    pub access_token: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -32,7 +32,7 @@ pub fn generate_token(
         user_id,
         token_uuid: Uuid::new_v4(),
         expires_in: Some((now + chrono::Duration::minutes(ttl)).timestamp()),
-        token: None,
+        access_token: None,
     };
 
     let claims = TokenClaims {
@@ -49,7 +49,7 @@ pub fn generate_token(
         &claims,
         &jsonwebtoken::EncodingKey::from_rsa_pem(decoded_private_key.as_bytes())?,
     )?;
-    data.token = Some(token);
+    data.access_token = Some(token);
     Ok(data)
 }
 
@@ -75,6 +75,6 @@ pub fn verify_token(
         user_id,
         token_uuid,
         expires_in: None,
-        token: None,
+        access_token: None,
     })
 }

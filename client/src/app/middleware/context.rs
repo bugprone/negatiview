@@ -13,14 +13,14 @@ pub struct UserUseStateHandle {
 
 impl UserUseStateHandle {
     pub fn login(&self, value: UserDto) {
-        set_token(Some(value.token.clone()));
+        set_token(Some(value.access_token.clone()));
         self.data.set(value);
 
         self.navigator.push(&Route::Home);
     }
 
     pub fn login_without_redirection(&self, value: UserDto) {
-        set_token(Some(value.token.clone()));
+        set_token(Some(value.access_token.clone()));
         self.data.set(value);
     }
 
