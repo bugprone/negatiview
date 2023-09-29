@@ -52,7 +52,7 @@ pub async fn auth<B>(
     })?;
 
     let access_token_data =
-        match token::verify_token(data.env.access_token_private_key.to_owned(), &access_token) {
+        match token::verify_token(data.env.access_token_public_key.to_owned(), &access_token) {
             Ok(data) => data,
             Err(err) => {
                 return Err((StatusCode::UNAUTHORIZED, Json(json!({
