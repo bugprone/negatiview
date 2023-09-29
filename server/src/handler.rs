@@ -1,5 +1,5 @@
 use axum::extract::{Query, State};
-use axum::http::{header, Response, StatusCode};
+use axum::http::{HeaderMap, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum::{Extension, Json};
 use std::sync::Arc;
@@ -7,17 +7,18 @@ use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::SaltString;
 use axum_extra::extract::cookie::{Cookie, SameSite};
 use serde_json::{json, Value};
-use chrono::{Duration, Utc};
-use jsonwebtoken::{encode, EncodingKey, Header};
 use rand_core::OsRng;
+use redis::AsyncCommands;
 
 use crate::config::AppState;
 use crate::dto::post::NewPostRequest;
 use crate::dto::user::*;
-use crate::model::post::PostModel;
-use crate::model::user::{TokenClaims, User};
+use crate::middleware::auth::JwtClaims;
+use crate::middleware::token;
+use crate::middleware::token::TokenData;
+use crate::model::post::Post;
+use crate::model::user::User;
 use crate::schema::FilterOptions;
-
 pub async fn health_check() -> impl IntoResponse {
     const MESSAGE: &str = "negatiview server is working!";
 
@@ -30,16 +31,16 @@ pub async fn health_check() -> impl IntoResponse {
 }
 
 pub async fn me(
-    Extension(user): Extension<User>,
-    State(data): State<Arc<AppState>>,
+    Extension(jwt_claims): Extension<JwtClaims>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let token = generate_token(&data, user.clone());
+    let user = jwt_claims.user;
+
     let json_response = json!({
         "status": "success",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: token, // TODO: return stored token
+            token: "token".to_string(), // TODO: return stored token
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -100,14 +101,13 @@ pub async fn update_me(
             })))
         })?;
 
-    let token = generate_token(&data, user.clone()); // TODO: return stored token
     let json_response = json!({
         "status": "success",
         "message": "User updated successfully",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: token,
+            token: "token".to_string(), // TODO: return stored token
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
@@ -175,7 +175,26 @@ pub async fn new_user(
         })))
     })?;
 
-    let token = generate_token(&data, user.clone()); // TODO: store token
+    let access_token_data = issue_token(
+        user.id,
+        data.env.access_token_max_age,
+        data.env.access_token_private_key.to_owned(),
+    )?;
+    let refresh_token_data = issue_token(
+        user.id,
+        data.env.refresh_token_max_age,
+        data.env.refresh_token_private_key.to_owned(),
+    )?;
+
+    save_token_to_redis(&data, &access_token_data, data.env.access_token_max_age).await?;
+    save_token_to_redis(
+        &data,
+        &refresh_token_data,
+        data.env.refresh_token_max_age,
+    )
+    .await?;
+
+    let headers = set_cookies(data, &access_token_data, &refresh_token_data);
 
     let json_response = json!({
         "status": "success",
@@ -183,13 +202,55 @@ pub async fn new_user(
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: token,
+            token: access_token_data.token.unwrap(),
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
         }
     });
 
-    Ok((StatusCode::CREATED, Json(json_response)))
+    let mut response = Response::builder()
+        .status(StatusCode::OK)
+        .body(json_response.to_string())
+        .unwrap();
+
+    response.headers_mut().extend(headers);
+
+    Ok(response)
+}
+
+fn set_cookies(data: Arc<AppState>, access_token_data: &TokenData, refresh_token_data: &TokenData) -> HeaderMap {
+    let access_cookie = Cookie::build(
+        "access_token",
+        access_token_data.token.clone().unwrap_or_default(),
+    )
+        .path("/")
+        .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+
+    let refresh_cookie = Cookie::build(
+        "refresh_token",
+        refresh_token_data.token.clone().unwrap_or_default(),
+    )
+        .path("/")
+        .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
+
+    let logged_in_cookie = Cookie::build("logged_in", "true")
+        .path("/")
+        .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
+        .same_site(SameSite::Lax)
+        .http_only(false)
+        .finish();
+
+    let mut headers = HeaderMap::new();
+    headers.append("Set-Cookie", access_cookie.to_string().parse().unwrap());
+    headers.append("Set-Cookie", refresh_cookie.to_string().parse().unwrap());
+    headers.append("Set-Cookie", logged_in_cookie.to_string().parse().unwrap());
+    headers
 }
 
 fn get_hashed_password(password: &str) -> Result<String, (StatusCode, Json<Value>)> {
@@ -247,46 +308,46 @@ pub async fn login(
         }))));
     }
 
-    let token = generate_token(&data, user.clone());
-    let cookie = Cookie::build("token", token.to_owned())
-        .path("/")
-        .max_age(time::Duration::minutes(data.env.jwt_expires_in))
-        .same_site(SameSite::Lax)
-        .http_only(true)
-        .finish();
+    let access_token_data = issue_token(
+        user.id,
+        data.env.access_token_max_age,
+        data.env.access_token_private_key.to_owned(),
+    )?;
+    let refresh_token_data = issue_token(
+        user.id,
+        data.env.refresh_token_max_age,
+        data.env.refresh_token_private_key.to_owned(),
+    )?;
 
-    let mut response = Response::new(json!({
+    save_token_to_redis(&data, &access_token_data, data.env.access_token_max_age).await?;
+    save_token_to_redis(
+        &data,
+        &refresh_token_data,
+        data.env.refresh_token_max_age,
+    )
+        .await?;
+
+    let headers = set_cookies(data, &access_token_data, &refresh_token_data);
+    let json_response = json!({
         "status": "success",
         "message": "Login successful",
         "data": UserDto {
             email: user.email,
             display_name: user.display_name,
-            token: token,
+            token: access_token_data.token.unwrap(),
             biography: user.biography.unwrap_or_default(),
             profile_image_url: user.profile_image_url.unwrap_or_default(),
-        },
-    }).to_string());
-    response.headers_mut().insert(header::SET_COOKIE, cookie.to_string().parse().unwrap());
-    Ok(response)
-}
+        }
+    });
 
-fn generate_token(data: &Arc<AppState>, user: User) -> String {
-    let now = Utc::now();
-    let iat = now.timestamp() as usize;
-    let exp = (now + Duration::minutes(data.env.jwt_expires_in)).timestamp() as usize;
-    let claims: TokenClaims = TokenClaims {
-        sub: user.id.to_string(),
-        exp,
-        iat,
-    };
-
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
-    )
+    let mut response = Response::builder()
+        .status(StatusCode::OK)
+        .body(json_response.to_string())
         .unwrap();
-    token
+
+    response.headers_mut().extend(headers);
+
+    Ok(response)
 }
 
 pub async fn post_list(
@@ -299,7 +360,7 @@ pub async fn post_list(
     let offset = (opts.page.unwrap_or(1) - 1) * limit;
 
     let query_result = sqlx::query_as!(
-        PostModel,
+        Post,
         "SELECT * FROM posts LIMIT $1 OFFSET $2",
         limit as i32,
         offset as i32
@@ -351,4 +412,49 @@ pub async fn new_post(
     });
 
     Ok((StatusCode::CREATED, Json(json_response)))
+}
+
+fn issue_token(
+    user_id: uuid::Uuid,
+    max_age: i64,
+    private_key: String,
+) -> Result<TokenData, (StatusCode, Json<serde_json::Value>)> {
+    token::generate_token(user_id, max_age, private_key).map_err(|err| {
+        (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+            "status": "fail",
+            "message": format!("Something bad happened while generating token: {err}")
+        })))
+    })
+}
+
+async fn save_token_to_redis(
+    data: &Arc<AppState>,
+    token_data: &TokenData,
+    max_age: i64,
+) -> Result<(), (StatusCode, Json<serde_json::Value>)> {
+    let mut redis_client = data.redis_client
+        .get_async_connection()
+        .await
+        .map_err(|err| {
+            (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while connecting to redis: {err}")
+            })))
+        })?;
+
+    redis_client
+        .set_ex(
+            token_data.token_uuid.to_string(),
+            token_data.user_id.to_string(),
+            (max_age * 60) as usize,
+        )
+        .await
+        .map_err(|err| {
+            (StatusCode::UNPROCESSABLE_ENTITY, Json(json!({
+                "status": "fail",
+                "message": format!("Something bad happened while saving token to redis: {err}")
+            })))
+        })?;
+
+    Ok(())
 }

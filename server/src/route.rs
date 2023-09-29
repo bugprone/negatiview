@@ -9,9 +9,9 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::auth::auth;
 use crate::config::{AppState, Opt};
 use crate::handler::*;
+use crate::middleware::auth::auth;
 
 pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
     Router::new()

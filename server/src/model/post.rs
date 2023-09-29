@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
-pub struct PostModel {
+pub struct Post {
     pub id: uuid::Uuid,
     pub title: String,
     pub user_id: Option<uuid::Uuid>,

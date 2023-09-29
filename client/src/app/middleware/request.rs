@@ -5,7 +5,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use crate::app::middleware::error::{Error, ErrorInfo};
 
 const API_ROOT: &str = "http://localhost:8081/api";
-const TOKEN_KEY: &str = "negatiview.token";
+const TOKEN_KEY: &str = "access_token";
 
 lazy_static! {
     pub static ref TOKEN: RwLock<Option<String>> = {

@@ -6,6 +6,7 @@ use std::{
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
 };
+use redis::Client;
 use server::route::create_router;
 use server::config::{AppState, Config, Opt};
 
@@ -25,14 +26,18 @@ async fn main() {
 
     tracing_subscriber::fmt::init();
 
-    let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let pool = match PgPoolOptions::new()
         .max_connections(10)
-        .connect(&database_url)
+        .connect(&config.database_url)
         .await
     {
         Ok(pool) => pool,
-        Err(e) => panic!("Error connecting to database: {}", e),
+        Err(err) => panic!("Error connecting to database: {err}"),
+    };
+
+    let redis_client = match Client::open(config.redis_url.to_owned()) {
+        Ok(client) => client,
+        Err(err) => panic!("Error connecting to redis: {err}"),
     };
 
     let socket_addr = SocketAddr::from((
@@ -43,9 +48,10 @@ async fn main() {
     let app = create_router(Arc::new(AppState {
         db: pool.clone(),
         env: config.clone(),
+        redis_client: redis_client.clone(),
     }), opt);
 
-    log::info!("listening on http://{:?}", socket_addr);
+    log::info!("🚀 negatiview server started successfully on http://{:?}", socket_addr);
 
     axum::Server::bind(&socket_addr)
         .serve(app.into_make_service())
