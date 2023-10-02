@@ -17,11 +17,6 @@ pub struct PostDto {
     pub author: ProfileDto,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct PostDtoWrapper {
-    pub data: PostDto,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Posts {
     pub posts: Vec<PostDto>,
@@ -34,11 +29,6 @@ pub struct PostUpdateDto {
     pub description: String,
     pub body: String,
     pub tag_list: Option<Vec<String>>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PostUpdateDtoWrapper {
-    pub data: PostUpdateDto,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

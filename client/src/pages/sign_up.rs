@@ -4,9 +4,10 @@ use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
 use crate::middlewares::context::use_user_context;
-use crate::middlewares::request::request_post;
 use crate::routes::AppRoute;
-use crate::types::user::{SignUpDto, SignUpDtoWrapper, UserDtoWrapper};
+use crate::services::user::sign_up;
+use crate::types::user::SignUpDto;
+use crate::types::Wrapper;
 
 #[function_component(SignUp)]
 pub fn sign_up_page() -> Html {
@@ -15,13 +16,7 @@ pub fn sign_up_page() -> Html {
     let sign_up = {
         let sign_up_dto = sign_up_dto.clone();
         use_async(async move {
-            request_post::<SignUpDtoWrapper, UserDtoWrapper>(
-                "/users".to_string(),
-                SignUpDtoWrapper {
-                    data: (*sign_up_dto).clone(),
-                },
-            )
-            .await
+            sign_up(Wrapper::<SignUpDto> { data: (*sign_up_dto).clone() }).await
         })
     };
 

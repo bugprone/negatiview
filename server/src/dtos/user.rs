@@ -19,19 +19,9 @@ pub struct UserUpdateDto {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct UserUpdateDtoWrapper {
-    pub data: UserUpdateDto,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
 pub struct LoginDto {
     pub email: String,
     pub password: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct LoginDtoWrapper {
-    pub data: LoginDto,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,9 +29,4 @@ pub struct SignUpDto {
     pub email: String,
     pub password: String,
     pub display_name: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct SignUpDtoWrapper {
-    pub data: SignUpDto,
 }

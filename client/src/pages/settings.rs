@@ -4,7 +4,8 @@ use yew_hooks::prelude::*;
 
 use crate::middlewares::context::use_user_context;
 use crate::services::user::{current, save};
-use crate::types::user::{UserUpdateDto, UserUpdateDtoWrapper};
+use crate::types::user::UserUpdateDto;
+use crate::types::Wrapper;
 
 #[function_component(Settings)]
 pub fn setting() -> Html {
@@ -19,7 +20,7 @@ pub fn setting() -> Html {
         let update_dto = update_dto.clone();
         let password = password.clone();
         use_async(async move {
-            let mut req = UserUpdateDtoWrapper {
+            let mut req = Wrapper::<UserUpdateDto> {
                 data: (*update_dto).clone(),
             };
             if !(*password).is_empty() {

@@ -15,6 +15,7 @@ use serde_json::{json, Value};
 use crate::config::AppState;
 use crate::dtos::post::NewPostRequest;
 use crate::dtos::user::*;
+use crate::dtos::Wrapper;
 use crate::middlewares::auth::JwtClaims;
 use crate::middlewares::token;
 use crate::middlewares::token::TokenData;
@@ -57,7 +58,7 @@ pub async fn me_handler(
 pub async fn update_me_handler(
     Extension(jwt_claims): Extension<JwtClaims>,
     State(data): State<Arc<AppState>>,
-    Json(body): Json<UserUpdateDtoWrapper>,
+    Json(body): Json<Wrapper<UserUpdateDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user = jwt_claims.user;
     let req = body.data;
@@ -160,7 +161,7 @@ pub async fn user_list_handler(
 
 pub async fn new_user_handler(
     State(data): State<Arc<AppState>>,
-    Json(body): Json<SignUpDtoWrapper>,
+    Json(body): Json<Wrapper<SignUpDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let req = body.data;
     let hashed_password = get_hashed_password(&req.password)?;
@@ -280,7 +281,7 @@ fn get_hashed_password(password: &str) -> Result<String, (StatusCode, Json<Value
 
 pub async fn login_handler(
     State(data): State<Arc<AppState>>,
-    Json(body): Json<LoginDtoWrapper>,
+    Json(body): Json<Wrapper<LoginDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let req = body.data;
     let user = sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", req.email)

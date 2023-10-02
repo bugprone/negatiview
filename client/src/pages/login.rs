@@ -6,7 +6,8 @@ use yew_router::prelude::*;
 use crate::middlewares::context::use_user_context;
 use crate::routes::AppRoute;
 use crate::services::user::login;
-use crate::types::user::{LoginDto, LoginDtoWrapper};
+use crate::types::user::LoginDto;
+use crate::types::Wrapper;
 
 #[function_component(Login)]
 pub fn login_page() -> Html {
@@ -16,7 +17,7 @@ pub fn login_page() -> Html {
     let login = {
         let login_dto = login_dto.clone();
         use_async(async move {
-            login(LoginDtoWrapper { data: (*login_dto).clone() }).await
+            login(Wrapper::<LoginDto> { data: (*login_dto).clone() }).await
         })
     };
 

@@ -1,7 +1,8 @@
 use crate::middlewares::error::Error;
 use crate::middlewares::pagination::limit;
 use crate::middlewares::request::{request_delete, request_get};
-use crate::types::post::{PostDtoWrapper, Posts};
+use crate::types::post::{PostDto, Posts};
+use crate::types::Wrapper;
 
 pub async fn all(page: u32) -> Result<Posts, Error> {
     request_get::<Posts>(format!("/posts?{}", limit(10, page))).await
@@ -23,10 +24,10 @@ pub async fn favorited_by(author: String, page: u32) -> Result<Posts, Error> {
     request_get::<Posts>(format!("/posts?favorited={}&{}", author, limit(10, page))).await
 }
 
-pub async fn favorite(slug: String) -> Result<PostDtoWrapper, Error> {
-    request_get::<PostDtoWrapper>(format!("/posts/{}/favorite", slug)).await
+pub async fn favorite(slug: String) -> Result<Wrapper<PostDto>, Error> {
+    request_get::<Wrapper<PostDto>>(format!("/posts/{}/favorite", slug)).await
 }
 
-pub async fn unfavorite(slug: String) -> Result<PostDtoWrapper, Error> {
-    request_delete::<PostDtoWrapper>(format!("/posts/{}/favorite", slug)).await
+pub async fn unfavorite(slug: String) -> Result<Wrapper<PostDto>, Error> {
+    request_delete::<Wrapper<PostDto>>(format!("/posts/{}/favorite", slug)).await
 }
