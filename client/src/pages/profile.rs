@@ -4,9 +4,8 @@ use yew_router::prelude::*;
 
 use crate::components::post_list::{PostList, PostListFilter};
 use crate::middlewares::context::use_user_context;
-use crate::middlewares::request::{request_delete, request_get, request_post};
 use crate::routes::AppRoute;
-use crate::types::profile::ProfileWrapper;
+use crate::services::profile::{follow, get, unfollow};
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum ProfileTab {
@@ -24,9 +23,7 @@ pub struct Props {
 pub fn profile(props: &Props) -> Html {
     let profile = {
         let display_name = props.display_name.clone();
-        use_async(async move {
-            request_get::<ProfileWrapper>(format!("/profile/{}", display_name)).await
-        })
+        use_async(async move { get(display_name).await })
     };
     let follow = {
         let profile = profile.clone();
@@ -34,15 +31,10 @@ pub fn profile(props: &Props) -> Html {
         use_async(async move {
             if let Some(resp) = &profile.data {
                 if resp.data.following {
-                    return request_delete::<ProfileWrapper>(format!(
-                        "/profile/{}/follow",
-                        display_name
-                    ))
-                    .await;
+                    return unfollow(display_name).await;
                 }
             }
-            request_post::<(), ProfileWrapper>(format!("/profile/{}/follow", display_name), ())
-                .await
+            follow(display_name).await
         })
     };
 

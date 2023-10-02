@@ -3,39 +3,39 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use crate::middlewares::context::use_user_context;
-use crate::middlewares::request::{request_get, request_put};
-use crate::types::user::{UserDtoWrapper, UserUpdateDto, UserUpdateDtoWrapper};
+use crate::services::user::{current, save};
+use crate::types::user::{UserUpdateDto, UserUpdateDtoWrapper};
 
 #[function_component(Settings)]
 pub fn setting() -> Html {
     let user_ctx = use_user_context();
-    let update_info = use_state(UserUpdateDto::default);
+    let update_dto = use_state(UserUpdateDto::default);
     let password = use_state(String::default);
     let user = use_async_with_options(
-        async move { request_get::<UserDtoWrapper>("/me".to_string()).await },
+        async move { current().await },
         UseAsyncOptions::enable_auto(),
     );
     let update = {
-        let update_info = update_info.clone();
+        let update_dto = update_dto.clone();
         let password = password.clone();
         use_async(async move {
-            let mut request = UserUpdateDtoWrapper {
-                data: (*update_info).clone(),
+            let mut req = UserUpdateDtoWrapper {
+                data: (*update_dto).clone(),
             };
             if !(*password).is_empty() {
-                request.data.password = Some((*password).clone());
+                req.data.password = Some((*password).clone());
             }
-            request_put::<UserUpdateDtoWrapper, UserDtoWrapper>("/me".to_string(), request).await
+            save(req).await
         })
     };
 
     {
         let user = user.clone();
-        let update_info = update_info.clone();
+        let update_dto = update_dto.clone();
         use_effect_with_deps(
             move |user| {
                 if let Some(user) = &user.data {
-                    update_info.set(UserUpdateDto {
+                    update_dto.set(UserUpdateDto {
                         email: user.data.email.clone(),
                         display_name: user.data.display_name.clone(),
                         password: None,
@@ -72,22 +72,22 @@ pub fn setting() -> Html {
     };
 
     let oninput_display_name = {
-        let update_info = update_info.clone();
+        let update_dto = update_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*update_info).clone();
-            info.display_name = input.value();
-            update_info.set(info);
+            let mut dto = (*update_dto).clone();
+            dto.display_name = input.value();
+            update_dto.set(dto);
         })
     };
 
     let oninput_email = {
-        let update_info = update_info.clone();
+        let update_dto = update_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*update_info).clone();
-            info.email = input.value();
-            update_info.set(info);
+            let mut dto = (*update_dto).clone();
+            dto.email = input.value();
+            update_dto.set(dto);
         })
     };
 
@@ -100,22 +100,22 @@ pub fn setting() -> Html {
     };
 
     let oninput_biography = {
-        let update_info = update_info.clone();
+        let update_dto = update_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*update_info).clone();
-            info.biography = input.value();
-            update_info.set(info);
+            let mut dto = (*update_dto).clone();
+            dto.biography = input.value();
+            update_dto.set(dto);
         })
     };
 
     let oninput_profile_image_url = {
-        let update_info = update_info.clone();
+        let update_dto = update_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*update_info).clone();
-            info.profile_image_url = input.value();
-            update_info.set(info);
+            let mut dto = (*update_dto).clone();
+            dto.profile_image_url = input.value();
+            update_dto.set(dto);
         })
     };
 
@@ -131,7 +131,7 @@ pub fn setting() -> Html {
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="email"
                         placeholder="Email"
-                        value={update_info.email.clone()}
+                        value={update_dto.email.clone()}
                         oninput={oninput_email}
                     />
                 </div>
@@ -155,7 +155,7 @@ pub fn setting() -> Html {
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
                         placeholder="Display Name"
-                        value={update_info.display_name.clone()}
+                        value={update_dto.display_name.clone()}
                         oninput={oninput_display_name}
                     />
                 </div>
@@ -167,7 +167,7 @@ pub fn setting() -> Html {
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
                         placeholder="URL to Profile Image"
-                        value={update_info.profile_image_url.clone()}
+                        value={update_dto.profile_image_url.clone()}
                         oninput={oninput_profile_image_url}
                     />
                 </div>
@@ -179,7 +179,7 @@ pub fn setting() -> Html {
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
                         placeholder="About Yourself"
-                        value={update_info.biography.clone()}
+                        value={update_dto.biography.clone()}
                         oninput={oninput_biography}
                     />
                 </div>

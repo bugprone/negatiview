@@ -2,13 +2,13 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 
 use crate::routes::AppRoute;
-use crate::types::profile::Profile;
+use crate::types::profile::ProfileDto;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
     pub slug: String,
     pub can_modify: bool,
-    pub author: Profile,
+    pub author: ProfileDto,
     pub created_at: String,
 }
 
@@ -27,7 +27,6 @@ pub fn post_meta(props: &Props) -> Html {
                     {&props.created_at}
                 </span>
             </div>
-            // <ArticleActions can_modify={props.can_modify} slug={props.slug.clone()} />
         </div>
     }
 }

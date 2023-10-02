@@ -4,25 +4,19 @@ use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
 use crate::middlewares::context::use_user_context;
-use crate::middlewares::request::request_post;
 use crate::routes::AppRoute;
-use crate::types::user::{LoginDto, LoginDtoWrapper, UserDtoWrapper};
+use crate::services::user::login;
+use crate::types::user::{LoginDto, LoginDtoWrapper};
 
 #[function_component(Login)]
 pub fn login_page() -> Html {
     let user_ctx = use_user_context();
-    let login_info = use_state(LoginDto::default);
+    let login_dto = use_state(LoginDto::default);
 
     let login = {
-        let login_info = login_info.clone();
+        let login_dto = login_dto.clone();
         use_async(async move {
-            request_post::<LoginDtoWrapper, UserDtoWrapper>(
-                "/login".to_string(),
-                LoginDtoWrapper {
-                    data: (*login_info).clone(),
-                },
-            )
-            .await
+            login(LoginDtoWrapper { data: (*login_dto).clone() }).await
         })
     };
 
@@ -45,22 +39,22 @@ pub fn login_page() -> Html {
     };
 
     let oninput_email = {
-        let login_info = login_info.clone();
+        let login_dto = login_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*login_info).clone();
-            info.email = input.value();
-            login_info.set(info);
+            let mut dto = (*login_dto).clone();
+            dto.email = input.value();
+            login_dto.set(dto);
         })
     };
 
     let oninput_password = {
-        let login_info = login_info.clone();
+        let login_dto = login_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*login_info).clone();
-            info.password = input.value();
-            login_info.set(info);
+            let mut dto = (*login_dto).clone();
+            dto.password = input.value();
+            login_dto.set(dto);
         })
     };
 
@@ -75,7 +69,7 @@ pub fn login_page() -> Html {
                     <input
                         class="mt-1 p-2 border rounded w-full"
                         type="email"
-                        value={ login_info.email.clone() }
+                        value={ login_dto.email.clone() }
                         oninput={ oninput_email }
                         />
                 </div>
@@ -86,7 +80,7 @@ pub fn login_page() -> Html {
                     <input
                         class="mt-1 p-2 border rounded w-full"
                         type="password"
-                        value={ login_info.password.clone() }
+                        value={ login_dto.password.clone() }
                         oninput={ oninput_password }
                         />
                 </div>

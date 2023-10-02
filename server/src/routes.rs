@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use axum::{http::StatusCode, middleware, Router, routing::get, routing::post, routing::put};
+use axum::{http::StatusCode, middleware, Router, routing::get, routing::post};
 use axum::body::{Body, boxed};
 use axum::http::Response;
 use tokio::fs;
@@ -16,20 +16,39 @@ use crate::middlewares::auth::auth;
 
 pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
     Router::new()
-        .route("/api/health", get(health_check))
-        .route(
-            "/api/me",
-            get(me).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
+        .nest(
+            "/api",
+            Router::new()
+                .route(
+                    "/health",
+                    get(health_check_handler)
+                )
+                .nest(
+                    "/user",
+                    Router::new()
+                        .route(
+                            "/",
+                            get(me_handler).put(update_me_handler)
+                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                        )
+                        .route(
+                            "/login",
+                            post(login_handler)
+                        )
+                        .route(
+                            "/sign_up",
+                            post(new_user_handler)
+                        )
+                )
+                .route(
+                    "/users",
+                    get(user_list_handler)
+                )
+                .route(
+                    "/posts",
+                    get(post_list_handler).post(new_post_handler)
+                )
         )
-        .route(
-            "/api/me",
-            put(update_me).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
-        )
-        .route("/api/users", get(user_list))
-        .route("/api/users", post(new_user))
-        .route("/api/login", post(login))
-        .route("/api/posts", get(post_list))
-        .route("/api/posts", post(new_post))
         .fallback_service(get(|req| async move {
             match ServeDir::new(&opt.static_dir).oneshot(req).await {
                 Ok(res) => {

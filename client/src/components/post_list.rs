@@ -3,17 +3,15 @@ use yew_hooks::prelude::*;
 
 use crate::components::list_pagination::ListPagination;
 use crate::components::post_preview::PostPreview;
-use crate::middlewares::pagination::limit;
-use crate::middlewares::request::request_get;
-use crate::types::post::Posts;
+use crate::services::post::{all, by_author, by_tag, favorited_by, feed};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PostListFilter {
     All,
     ByAuthor(String),
     ByTag(String),
-    StarredBy(String),
     Feed,
+    StarredBy(String),
 }
 
 #[derive(Properties, Clone, PartialEq, Eq)]
@@ -30,32 +28,11 @@ pub fn post_list(props: &Props) -> Html {
 
         use_async(async move {
             match filter {
-                PostListFilter::All => {
-                    request_get::<Posts>(format!("/posts?{}", limit(10, *current_page))).await
-                }
-                PostListFilter::ByAuthor(author) => {
-                    request_get::<Posts>(format!(
-                        "/posts?author={}&{}",
-                        author,
-                        limit(10, *current_page)
-                    ))
-                    .await
-                }
-                PostListFilter::ByTag(tag) => {
-                    request_get::<Posts>(format!("/posts?tag={}&{}", tag, limit(10, *current_page)))
-                        .await
-                }
-                PostListFilter::StarredBy(author) => {
-                    request_get::<Posts>(format!(
-                        "/posts?starred_by={}&{}",
-                        author,
-                        limit(10, *current_page)
-                    ))
-                    .await
-                }
-                PostListFilter::Feed => {
-                    request_get::<Posts>(format!("/posts/feed?{}", limit(10, 0))).await
-                }
+                PostListFilter::All => { all(*current_page).await }
+                PostListFilter::ByAuthor(author) => { by_author(author, *current_page).await }
+                PostListFilter::ByTag(tag) => { by_tag(tag, *current_page).await }
+                PostListFilter::Feed => { feed().await }
+                PostListFilter::StarredBy(author) => { favorited_by(author, *current_page).await }
             }
         })
     };

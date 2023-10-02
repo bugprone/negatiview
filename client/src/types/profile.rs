@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct Profile {
+pub struct ProfileDto {
     pub display_name: String,
     pub biography: Option<String>,
     pub profile_image_url: Option<String>,
@@ -9,6 +9,6 @@ pub struct Profile {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
-pub struct ProfileWrapper {
-    pub data: Profile,
+pub struct ProfileDtoWrapper {
+    pub data: ProfileDto,
 }

@@ -5,8 +5,7 @@ use yew_hooks::prelude::*;
 
 use crate::components::post_meta::PostMeta;
 use crate::middlewares::context::use_user_context;
-use crate::middlewares::request::request_get;
-use crate::types::post::PostWrapper;
+use crate::services::post::favorite;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
@@ -18,7 +17,7 @@ pub fn post(props: &Props) -> Html {
     let post = {
         let slug = props.slug.clone();
         use_async_with_options(
-            async move { request_get::<PostWrapper>(format!("/posts/{}", slug)).await },
+            async move { favorite(slug).await },
             UseAsyncOptions::enable_auto(),
         )
     };

@@ -2,8 +2,9 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 
 use crate::middlewares::error::Error;
-use crate::middlewares::request::{get_token, request_get, set_token};
-use crate::types::user::{UserDto, UserDtoWrapper};
+use crate::middlewares::request::{get_token, set_token};
+use crate::services::user::current;
+use crate::types::user::UserDto;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
@@ -14,7 +15,9 @@ pub struct Props {
 pub fn user_context_provider(props: &Props) -> Html {
     let user_ctx = use_state(UserDto::default);
     let current_user =
-        use_async(async move { request_get::<UserDtoWrapper>("/users".to_string()).await });
+        use_async(async move {
+            current().await
+        });
 
     {
         let current_user = current_user.clone();

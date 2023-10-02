@@ -1,35 +1,35 @@
 use chrono::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::types::profile::Profile;
+use crate::types::profile::ProfileDto;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct Post {
+pub struct PostDto {
     pub slug: String,
     pub title: String,
     pub description: String,
     pub body: String,
     pub tag_list: Vec<String>,
-    pub starred: bool,
-    pub starred_count: u32,
-    pub author: Profile,
+    pub favorited: bool,
+    pub favorites_count: u32,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+    pub author: ProfileDto,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
-pub struct PostWrapper {
-    pub data: Post,
+pub struct PostDtoWrapper {
+    pub data: PostDto,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Posts {
-    pub posts: Vec<Post>,
+    pub posts: Vec<PostDto>,
     pub count: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PostUpdate {
+pub struct PostUpdateDto {
     pub title: String,
     pub description: String,
     pub body: String,
@@ -37,11 +37,11 @@ pub struct PostUpdate {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PostUpdateWrapper {
-    pub data: PostUpdate,
+pub struct PostUpdateDtoWrapper {
+    pub data: PostUpdateDto,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct TagList {
+pub struct Tags {
     pub tags: Vec<String>,
 }

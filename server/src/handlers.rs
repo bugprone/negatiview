@@ -22,7 +22,7 @@ use crate::models::post::Post;
 use crate::models::user::User;
 use crate::schema::FilterOptions;
 
-pub async fn health_check() -> impl IntoResponse {
+pub async fn health_check_handler() -> impl IntoResponse {
     const MESSAGE: &str = "negatiview server is working!";
 
     let json_response = json!({
@@ -33,7 +33,7 @@ pub async fn health_check() -> impl IntoResponse {
     Json(json_response)
 }
 
-pub async fn me(
+pub async fn me_handler(
     Extension(jwt_claims): Extension<JwtClaims>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -54,7 +54,7 @@ pub async fn me(
     Ok(Json(json_response))
 }
 
-pub async fn update_me(
+pub async fn update_me_handler(
     Extension(jwt_claims): Extension<JwtClaims>,
     State(data): State<Arc<AppState>>,
     Json(body): Json<UserUpdateDtoWrapper>,
@@ -122,7 +122,7 @@ pub async fn update_me(
     Ok((StatusCode::OK, Json(json_response)))
 }
 
-pub async fn user_list(
+pub async fn user_list_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -158,7 +158,7 @@ pub async fn user_list(
     Ok(Json(json_response))
 }
 
-pub async fn new_user(
+pub async fn new_user_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<SignUpDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -278,7 +278,7 @@ fn get_hashed_password(password: &str) -> Result<String, (StatusCode, Json<Value
     Ok(hashed_password)
 }
 
-pub async fn login(
+pub async fn login_handler(
     State(data): State<Arc<AppState>>,
     Json(body): Json<LoginDtoWrapper>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -355,7 +355,7 @@ pub async fn login(
     Ok(response)
 }
 
-pub async fn post_list(
+pub async fn post_list_handler(
     opts: Option<Query<FilterOptions>>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -391,7 +391,7 @@ pub async fn post_list(
     Ok(Json(json_response))
 }
 
-pub async fn new_post(
+pub async fn new_post_handler(
     State(data): State<Arc<AppState>>,
     Json(post): Json<NewPostRequest>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {

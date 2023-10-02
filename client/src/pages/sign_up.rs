@@ -11,14 +11,14 @@ use crate::types::user::{SignUpDto, SignUpDtoWrapper, UserDtoWrapper};
 #[function_component(SignUp)]
 pub fn sign_up_page() -> Html {
     let user_ctx = use_user_context();
-    let sign_up_info = use_state(SignUpDto::default);
+    let sign_up_dto = use_state(SignUpDto::default);
     let sign_up = {
-        let sign_up_info = sign_up_info.clone();
+        let sign_up_dto = sign_up_dto.clone();
         use_async(async move {
             request_post::<SignUpDtoWrapper, UserDtoWrapper>(
                 "/users".to_string(),
                 SignUpDtoWrapper {
-                    data: (*sign_up_info).clone(),
+                    data: (*sign_up_dto).clone(),
                 },
             )
             .await
@@ -44,32 +44,32 @@ pub fn sign_up_page() -> Html {
     };
 
     let oninput_email = {
-        let register_req = sign_up_info.clone();
+        let register_req = sign_up_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*register_req).clone();
-            info.email = input.value();
-            register_req.set(info);
+            let mut dto = (*register_req).clone();
+            dto.email = input.value();
+            register_req.set(dto);
         })
     };
 
     let oninput_password = {
-        let register_req = sign_up_info.clone();
+        let register_req = sign_up_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*register_req).clone();
-            info.password = input.value();
-            register_req.set(info);
+            let mut dto = (*register_req).clone();
+            dto.password = input.value();
+            register_req.set(dto);
         })
     };
 
     let oninput_display_name = {
-        let register_req = sign_up_info.clone();
+        let register_req = sign_up_dto.clone();
         Callback::from(move |e: InputEvent| {
             let input: HtmlInputElement = e.target_unchecked_into();
-            let mut info = (*register_req).clone();
-            info.display_name = input.value();
-            register_req.set(info);
+            let mut dto = (*register_req).clone();
+            dto.display_name = input.value();
+            register_req.set(dto);
         })
     };
 
@@ -84,7 +84,7 @@ pub fn sign_up_page() -> Html {
                     <input
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="email"
-                        value={ sign_up_info.email.clone() }
+                        value={ sign_up_dto.email.clone() }
                         oninput={ oninput_email }
                     />
                 </div>
@@ -95,7 +95,7 @@ pub fn sign_up_page() -> Html {
                     <input
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="password"
-                        value={ sign_up_info.password.clone() }
+                        value={ sign_up_dto.password.clone() }
                         oninput={ oninput_password }
                     />
                 </div>
@@ -106,7 +106,7 @@ pub fn sign_up_page() -> Html {
                     <input
                         class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
                         type="text"
-                        value={ sign_up_info.display_name.clone() }
+                        value={ sign_up_dto.display_name.clone() }
                         oninput={ oninput_display_name }
                     />
                 </div>

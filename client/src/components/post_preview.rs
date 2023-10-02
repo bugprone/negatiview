@@ -2,44 +2,44 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
-use crate::middlewares::request::{request_delete, request_post};
 use crate::routes::AppRoute;
-use crate::types::post::Post;
+use crate::services::post::{favorite, unfavorite};
+use crate::types::post::PostDto;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
-    pub post: Post,
+    pub post: PostDto,
 }
 
 #[function_component(PostPreview)]
 pub fn post_preview(props: &Props) -> Html {
     let post = use_state(|| props.post.clone());
-    let post_starred = {
+    let favorite = {
         let post = post.clone();
         use_async(async move {
-            if post.starred {
-                request_delete::<Post>(format!("/posts/{}/star", post.slug)).await
+            if post.favorited {
+                unfavorite(post.slug.clone()).await
             } else {
-                request_post::<(), Post>(format!("/posts/{}/star", post.slug), ()).await
+                favorite(post.slug.clone()).await
             }
         })
     };
 
     {
         let post = post.clone();
-        let post_starred = post_starred.clone();
+        let favorite = favorite.clone();
         use_effect_with_deps(
-            move |post_starred| {
-                if let Some(data) = &post_starred.data {
-                    post.set(data.clone());
+            move |favorite| {
+                if let Some(post_dto) = &favorite.data {
+                    post.set(post_dto.data.clone());
                 }
                 || ()
             },
-            post_starred,
+            favorite,
         )
     }
 
-    let star_button_class = if post.starred {
+    let favorite_button_class = if post.favorited {
         "text-yellow-500"
     } else {
         "text-gray-500"
@@ -48,7 +48,7 @@ pub fn post_preview(props: &Props) -> Html {
     let onclick = {
         Callback::from(move |e: MouseEvent| {
             e.prevent_default();
-            post_starred.run();
+            favorite.run();
         })
     };
 
@@ -58,17 +58,17 @@ pub fn post_preview(props: &Props) -> Html {
                 <img src={post.author.profile_image_url.clone()} alt="Author Image" class="w-8 h-8 rounded-full mr-2" />
                 <div class="info">
                     <div class="text-indigo-600 hover:underline">
-                        // <Link<Route> to={Route::Profile { display_name: post.author.display_name.clone() }}>
-                        //     { &post.author.display_name }
-                        // </Link<Route>>
+                        <Link<AppRoute> to={AppRoute::Profile { display_name: post.author.display_name.clone() }}>
+                            { &post.author.display_name }
+                        </Link<AppRoute>>
                     </div>
                     <span class="text-gray-500">
                         { &post.created_at.format("%B %e, %Y") }
                     </span>
                 </div>
                 <div class="ml-auto">
-                    <button class={star_button_class} onclick={onclick}>
-                        <i class="fas fa-star mr-1"></i> { post.starred_count }
+                    <button class={favorite_button_class} onclick={onclick}>
+                        <i class="fas fa-heart mr-1"></i> { post.favorites_count }
                     </button>
                 </div>
             </div>
