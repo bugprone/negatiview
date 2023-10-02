@@ -4,14 +4,19 @@ use yew_router::prelude::*;
 use crate::components::{
     footer::Footer,
     header::Header,
+    user_context_provider::UserContextProvider,
+};
+use crate::pages::{
+    health::Healthcheck,
+    home::Home,
     login::Login,
     new_post::NewPost,
     post::Post,
     profile::{Profile, ProfileTab},
+    settings::Settings,
     sign_up::SignUp,
-    user_context_provider::UserContextProvider,
+    users::Users
 };
-use crate::pages::{health::Healthcheck, home::Home, settings::Settings, users::Users};
 
 #[derive(Routable, Debug, Clone, PartialEq, Eq)]
 pub enum AppRoute {

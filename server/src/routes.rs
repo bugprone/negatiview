@@ -16,20 +16,20 @@ use crate::middlewares::auth::auth;
 
 pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
     Router::new()
-        .route("/services/health", get(health_check))
+        .route("/api/health", get(health_check))
         .route(
-            "/services/me",
+            "/api/me",
             get(me).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
         .route(
-            "/services/me",
+            "/api/me",
             put(update_me).route_layer(middleware::from_fn_with_state(app_state.clone(), auth)),
         )
-        .route("/services/users", get(user_list))
-        .route("/services/users", post(new_user))
-        .route("/services/login", post(login))
-        .route("/services/posts", get(post_list))
-        .route("/services/posts", post(new_post))
+        .route("/api/users", get(user_list))
+        .route("/api/users", post(new_user))
+        .route("/api/login", post(login))
+        .route("/api/posts", get(post_list))
+        .route("/api/posts", post(new_post))
         .fallback_service(get(|req| async move {
             match ServeDir::new(&opt.static_dir).oneshot(req).await {
                 Ok(res) => {
