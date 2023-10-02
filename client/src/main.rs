@@ -1,4 +1,4 @@
-use client::route::App;
+use client::routes::App;
 
 fn main() {
     wasm_logger::init(wasm_logger::Config::default());

@@ -22,15 +22,23 @@ impl Config {
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
         let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
 
-        let access_token_private_key = std::env::var("ACCESS_TOKEN_PRIVATE_KEY").expect("ACCESS_TOKEN_PRIVATE_KEY must be set");
-        let access_token_public_key = std::env::var("ACCESS_TOKEN_PUBLIC_KEY").expect("ACCESS_TOKEN_PUBLIC_KEY must be set");
-        let access_token_expires_in = std::env::var("ACCESS_TOKEN_EXPIRES_IN").expect("ACCESS_TOKEN_EXPIRES_IN must be set");
-        let access_token_max_age = std::env::var("ACCESS_TOKEN_MAX_AGE").expect("ACCESS_TOKEN_MAX_AGE must be set");
+        let access_token_private_key = std::env::var("ACCESS_TOKEN_PRIVATE_KEY")
+            .expect("ACCESS_TOKEN_PRIVATE_KEY must be set");
+        let access_token_public_key =
+            std::env::var("ACCESS_TOKEN_PUBLIC_KEY").expect("ACCESS_TOKEN_PUBLIC_KEY must be set");
+        let access_token_expires_in =
+            std::env::var("ACCESS_TOKEN_EXPIRES_IN").expect("ACCESS_TOKEN_EXPIRES_IN must be set");
+        let access_token_max_age =
+            std::env::var("ACCESS_TOKEN_MAX_AGE").expect("ACCESS_TOKEN_MAX_AGE must be set");
 
-        let refresh_token_private_key = std::env::var("REFRESH_TOKEN_PRIVATE_KEY").expect("REFRESH_TOKEN_PRIVATE_KEY must be set");
-        let refresh_token_public_key = std::env::var("REFRESH_TOKEN_PUBLIC_KEY").expect("REFRESH_TOKEN_PUBLIC_KEY must be set");
-        let refresh_token_expires_in = std::env::var("REFRESH_TOKEN_EXPIRES_IN").expect("REFRESH_TOKEN_EXPIRES_IN must be set");
-        let refresh_token_max_age = std::env::var("REFRESH_TOKEN_MAX_AGE").expect("REFRESH_TOKEN_MAX_AGE must be set");
+        let refresh_token_private_key = std::env::var("REFRESH_TOKEN_PRIVATE_KEY")
+            .expect("REFRESH_TOKEN_PRIVATE_KEY must be set");
+        let refresh_token_public_key = std::env::var("REFRESH_TOKEN_PUBLIC_KEY")
+            .expect("REFRESH_TOKEN_PUBLIC_KEY must be set");
+        let refresh_token_expires_in = std::env::var("REFRESH_TOKEN_EXPIRES_IN")
+            .expect("REFRESH_TOKEN_EXPIRES_IN must be set");
+        let refresh_token_max_age =
+            std::env::var("REFRESH_TOKEN_MAX_AGE").expect("REFRESH_TOKEN_MAX_AGE must be set");
 
         Config {
             database_url,

@@ -1,7 +1,7 @@
-pub mod dto;
-pub mod middleware;
-pub mod model;
-pub mod handler;
-pub mod route;
-pub mod schema;
 pub mod config;
+pub mod dtos;
+pub mod handlers;
+pub mod middlewares;
+pub mod models;
+pub mod routes;
+pub mod schema;

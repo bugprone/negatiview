@@ -1,14 +1,16 @@
-use clap::Parser;
-use dotenv::dotenv;
-use sqlx::{postgres::PgPoolOptions};
 use std::{
-    sync::Arc,
     net::{IpAddr, Ipv6Addr, SocketAddr},
     str::FromStr,
+    sync::Arc,
 };
+
+use clap::Parser;
+use dotenv::dotenv;
 use redis::Client;
-use server::route::create_router;
+use sqlx::postgres::PgPoolOptions;
+
 use server::config::{AppState, Config, Opt};
+use server::routes::create_router;
 
 #[tokio::main]
 async fn main() {
@@ -45,13 +47,19 @@ async fn main() {
         opt.port,
     ));
 
-    let app = create_router(Arc::new(AppState {
-        db: pool.clone(),
-        env: config.clone(),
-        redis_client: redis_client.clone(),
-    }), opt);
+    let app = create_router(
+        Arc::new(AppState {
+            db: pool.clone(),
+            env: config.clone(),
+            redis_client: redis_client.clone(),
+        }),
+        opt,
+    );
 
-    log::info!("🚀 negatiview server started successfully on http://{:?}", socket_addr);
+    log::info!(
+        "🚀 negatiview server started successfully on http://{:?}",
+        socket_addr
+    );
 
     axum::Server::bind(&socket_addr)
         .serve(app.into_make_service())
