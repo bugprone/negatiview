@@ -11,7 +11,10 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 use crate::config::{AppState, Opt};
-use crate::handlers::*;
+use crate::handlers::health_check;
+use crate::handlers::post::{get_post, new_post};
+use crate::handlers::profile::{follow_user, get_user_profile, unfollow_user};
+use crate::handlers::user::{login, me, sign_up, update_me};
 use crate::middlewares::auth::auth;
 
 pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
@@ -21,32 +24,52 @@ pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
             Router::new()
                 .route(
                     "/health",
-                    get(health_check_handler)
+                    get(health_check)
                 )
                 .nest(
                     "/user",
                     Router::new()
                         .route(
                             "/",
-                            get(me_handler).put(update_me_handler)
+                            get(me).put(update_me)
                                 .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
                         )
                         .route(
                             "/login",
-                            post(login_handler)
+                            post(login)
                         )
                         .route(
                             "/sign_up",
-                            post(new_user_handler)
+                            post(sign_up)
                         )
                 )
-                .route(
-                    "/users",
-                    get(user_list_handler)
+                .nest(
+                    "/profile",
+                    Router::new()
+                        .route(
+                            "/:display_name",
+                            get(get_user_profile)
+                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                        )
+                        .route(
+                            "/:display_name/follow",
+                            post(follow_user).delete(unfollow_user)
+                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                        )
                 )
-                .route(
+                .nest(
                     "/posts",
-                    get(post_list_handler).post(new_post_handler)
+                    Router::new()
+                        .route(
+                            "/",
+                            post(new_post)
+                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                        )
+                        .route(
+                            "/:slug",
+                            get(get_post)
+                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                        )
                 )
         )
         .fallback_service(get(|req| async move {

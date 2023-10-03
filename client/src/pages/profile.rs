@@ -75,11 +75,11 @@ pub fn profile(props: &Props) -> Html {
         let profile = &profile.data;
         html! {
             <div>
-                <div class="bg-white rounded-lg shadow-lg p-6 my-4">
+                <div class="bg-white shadow-lg rounded-lg p-6 my-4">
                     <div class="mx-auto">
                         <div>
                             <div class="col-xs-12 col-md-10 mx-auto">
-                                <img src={profile.profile_image_url.clone()} alt={profile.display_name.clone()} class="user-img w-20 h-20 rounded-full mx-auto mb-4" />
+                                <img src={profile.profile_image_url.clone()} alt={profile.display_name.clone()} class="w-20 h-20 rounded-full mx-auto mb-4" />
                                 <h4 class="text-2xl font-bold text-center">{&profile.display_name}</h4>
                                 <p class="text-gray-600 text-center">
                                     {
@@ -93,15 +93,17 @@ pub fn profile(props: &Props) -> Html {
                                 {
                                     if is_current_user {
                                         html! {
-                                            <div class="action-btn block mx-auto mt-4">
-                                                <Link<AppRoute> to={AppRoute::Settings}>
-                                                    { "Edit Profile Settings" }
+                                            <div class="text-gray-600 text-center mt-4">
+                                                <Link<AppRoute>
+                                                    to={AppRoute::Settings}
+                                                    classes="bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-full text-sm">
+                                                    { "Edit Profile" }
                                                 </Link<AppRoute>>
                                             </div>
                                         }
                                     } else {
                                         html! {
-                                            <button class="block mx-auto mt-4" onclick={onclick}>
+                                            <button class="text-center block mx-auto mt-4 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded-full text-sm" onclick={onclick}>
                                                 { if profile.following { "Unfollow" } else { "Follow" } }
                                             </button>
                                         }

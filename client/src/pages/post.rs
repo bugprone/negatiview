@@ -5,7 +5,7 @@ use yew_hooks::prelude::*;
 
 use crate::components::post_meta::PostMeta;
 use crate::middlewares::context::use_user_context;
-use crate::services::post::favorite;
+use crate::services::post::get;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
@@ -17,7 +17,7 @@ pub fn post(props: &Props) -> Html {
     let post = {
         let slug = props.slug.clone();
         use_async_with_options(
-            async move { favorite(slug).await },
+            async move { get(slug).await },
             UseAsyncOptions::enable_auto(),
         )
     };
@@ -49,7 +49,7 @@ pub fn post(props: &Props) -> Html {
                         <div class="col-xs-12">
                             { view_body(&post.body) }
                             <ul class="flex mt-4">
-                                {for post.tag_list.iter().map(|tag| {
+                                {for post.tags.iter().map(|tag| {
                                     html! {
                                         <li class="bg-gray-200 text-gray-600 px-2 py-1 rounded-full mr-2">
                                             { tag }

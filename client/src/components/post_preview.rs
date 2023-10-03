@@ -86,7 +86,7 @@ pub fn post_preview(props: &Props) -> Html {
                 </Link<AppRoute >>
             </span>
             <ul class="tag-list mt-4">
-                {for post.tag_list.iter().map(|tag| {
+                {for post.tags.iter().map(|tag| {
                     html! {
                         <li class="tag-default tag-pill tag-outline bg-gray-200 text-gray-600 px-2 py-1 rounded-full mr-2" key={ (&tag).to_string() }>
                             { &tag }

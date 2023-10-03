@@ -63,6 +63,11 @@ fn logged_in_view(user_ctx: &UserUseStateHandle) -> Html {
                 </Link<AppRoute >>
             </li>
             <li>
+                <Link<AppRoute> to={AppRoute::NewPost} classes="text-black hover:underline">
+                    { "New Post" }
+                </Link<AppRoute>>
+            </li>
+            <li>
                 <button onclick={on_logout} class="text-black hover:underline">
                     { "Logout" }
                 </button>

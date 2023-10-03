@@ -1,9 +1,9 @@
 pub mod health;
 pub mod home;
 pub mod login;
-pub mod new_post;
 pub mod post;
 pub mod profile;
 pub mod settings;
 pub mod sign_up;
 pub mod users;
+pub mod editor;

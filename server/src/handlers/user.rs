@@ -3,7 +3,7 @@ use std::sync::Arc;
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use argon2::password_hash::SaltString;
 use axum::{Extension, Json};
-use axum::extract::{Query, State};
+use axum::extract::State;
 use axum::http::{HeaderMap, Response, StatusCode};
 use axum::response::IntoResponse;
 use axum_extra::extract::cookie::{Cookie, SameSite};
@@ -13,28 +13,14 @@ use redis::AsyncCommands;
 use serde_json::{json, Value};
 
 use crate::config::AppState;
-use crate::dtos::post::NewPostRequest;
 use crate::dtos::user::*;
 use crate::dtos::Wrapper;
 use crate::middlewares::auth::JwtClaims;
 use crate::middlewares::token;
 use crate::middlewares::token::TokenData;
-use crate::models::post::Post;
 use crate::models::user::User;
-use crate::schema::FilterOptions;
 
-pub async fn health_check_handler() -> impl IntoResponse {
-    const MESSAGE: &str = "negatiview server is working!";
-
-    let json_response = json!({
-        "status": "success",
-        "message": MESSAGE
-    });
-
-    Json(json_response)
-}
-
-pub async fn me_handler(
+pub async fn me(
     Extension(jwt_claims): Extension<JwtClaims>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -55,7 +41,7 @@ pub async fn me_handler(
     Ok(Json(json_response))
 }
 
-pub async fn update_me_handler(
+pub async fn update_me(
     Extension(jwt_claims): Extension<JwtClaims>,
     State(data): State<Arc<AppState>>,
     Json(body): Json<Wrapper<UserUpdateDto>>,
@@ -89,11 +75,11 @@ pub async fn update_me_handler(
                 RETURNING *
                 "#,
         )
-        .bind(req.email)
-        .bind(req.display_name)
-        .bind(req.biography)
-        .bind(req.profile_image_url)
-        .bind(user.id),
+            .bind(req.email)
+            .bind(req.display_name)
+            .bind(req.biography)
+            .bind(req.profile_image_url)
+            .bind(user.id),
     };
 
     let user = query.fetch_one(&data.db).await.map_err(|err| {
@@ -123,43 +109,7 @@ pub async fn update_me_handler(
     Ok((StatusCode::OK, Json(json_response)))
 }
 
-pub async fn user_list_handler(
-    opts: Option<Query<FilterOptions>>,
-    State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let Query(opts) = opts.unwrap_or_default();
-
-    let limit = opts.limit.unwrap_or(10);
-    let offset = (opts.page.unwrap_or(1) - 1) * limit;
-
-    let query_result = sqlx::query_as!(
-        User,
-        "SELECT * FROM users LIMIT $1 OFFSET $2",
-        limit as i32,
-        offset as i32
-    )
-    .fetch_all(&data.db)
-    .await;
-
-    if query_result.is_err() {
-        let error_response = json!({
-            "status": "fail",
-            "message": "Something bad happened while fetching all users",
-        });
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-    }
-
-    let users = query_result.unwrap();
-
-    let json_response = json!({
-        "status": "success",
-        "users": users
-    });
-
-    Ok(Json(json_response))
-}
-
-pub async fn new_user_handler(
+pub async fn sign_up(
     State(data): State<Arc<AppState>>,
     Json(body): Json<Wrapper<SignUpDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -173,17 +123,17 @@ pub async fn new_user_handler(
         hashed_password,
         req.display_name
     )
-    .fetch_one(&data.db)
-    .await
-    .map_err(|err| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(json!({
-                "status": "fail",
-                "message": format!("Something bad happened while creating user: {err}")
-            })),
-        )
-    })?;
+        .fetch_one(&data.db)
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Something bad happened while creating user: {err}")
+                })),
+            )
+        })?;
 
     let access_token_data = issue_access_token(
         user.id,
@@ -232,21 +182,21 @@ fn set_cookies(
         "access_token",
         access_token_data.access_token.clone().unwrap_or_default(),
     )
-    .path("/")
-    .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
-    .same_site(SameSite::Lax)
-    .http_only(true)
-    .finish();
+        .path("/")
+        .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
 
     let refresh_cookie = Cookie::build(
         "refresh_token",
         refresh_token_data.access_token.clone().unwrap_or_default(),
     )
-    .path("/")
-    .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
-    .same_site(SameSite::Lax)
-    .http_only(true)
-    .finish();
+        .path("/")
+        .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
+        .same_site(SameSite::Lax)
+        .http_only(true)
+        .finish();
 
     let logged_in_cookie = Cookie::build("logged_in", "true")
         .path("/")
@@ -279,7 +229,7 @@ fn get_hashed_password(password: &str) -> Result<String, (StatusCode, Json<Value
     Ok(hashed_password)
 }
 
-pub async fn login_handler(
+pub async fn login(
     State(data): State<Arc<AppState>>,
     Json(body): Json<Wrapper<LoginDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
@@ -354,70 +304,6 @@ pub async fn login_handler(
     response.headers_mut().extend(headers);
 
     Ok(response)
-}
-
-pub async fn post_list_handler(
-    opts: Option<Query<FilterOptions>>,
-    State(data): State<Arc<AppState>>,
-) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let Query(opts) = opts.unwrap_or_default();
-
-    let limit = opts.limit.unwrap_or(10);
-    let offset = (opts.page.unwrap_or(1) - 1) * limit;
-
-    let query_result = sqlx::query_as!(
-        Post,
-        "SELECT * FROM posts LIMIT $1 OFFSET $2",
-        limit as i32,
-        offset as i32
-    )
-    .fetch_all(&data.db)
-    .await;
-
-    if query_result.is_err() {
-        let error_response = json!({
-            "status": "fail",
-            "message": "Something bad happened while fetching all posts",
-        });
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-    }
-
-    let posts = query_result.unwrap();
-
-    let json_response = json!({
-        "status": "success",
-        "posts": posts
-    });
-
-    Ok(Json(json_response))
-}
-
-pub async fn new_post_handler(
-    State(data): State<Arc<AppState>>,
-    Json(post): Json<NewPostRequest>,
-) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let query_result = sqlx::query!(
-        "INSERT INTO posts (title, content) VALUES ($1, $2) RETURNING *",
-        post.title,
-        post.content
-    )
-    .fetch_one(&data.db)
-    .await;
-
-    if query_result.is_err() {
-        let error_response = json!({
-            "status": "fail",
-            "message": "Something bad happened while creating post",
-        });
-        return Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)));
-    }
-
-    let json_response = json!({
-        "status": "success",
-        "message": "Post created successfully"
-    });
-
-    Ok((StatusCode::CREATED, Json(json_response)))
 }
 
 fn issue_access_token(

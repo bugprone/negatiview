@@ -9,9 +9,9 @@ pub struct PostDto {
     pub title: String,
     pub description: String,
     pub body: String,
-    pub tag_list: Vec<String>,
+    pub tags: Vec<String>,
     pub favorited: bool,
-    pub favorites_count: u32,
+    pub favorites_count: i64,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub author: ProfileDto,
@@ -23,12 +23,12 @@ pub struct Posts {
     pub count: u32,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct PostUpdateDto {
     pub title: String,
     pub description: String,
     pub body: String,
-    pub tag_list: Option<Vec<String>>,
+    pub tags: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

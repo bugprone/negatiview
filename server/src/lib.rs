@@ -1,3 +1,5 @@
+extern crate core;
+
 pub mod config;
 pub mod dtos;
 pub mod handlers;

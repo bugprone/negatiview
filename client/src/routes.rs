@@ -10,13 +10,13 @@ use crate::pages::{
     health::Healthcheck,
     home::Home,
     login::Login,
-    new_post::NewPost,
     post::Post,
     profile::{Profile, ProfileTab},
     settings::Settings,
     sign_up::SignUp,
     users::Users
 };
+use crate::pages::editor::Editor;
 
 #[derive(Routable, Debug, Clone, PartialEq, Eq)]
 pub enum AppRoute {
@@ -32,10 +32,12 @@ pub enum AppRoute {
     Login,
     #[at("/settings")]
     Settings,
-    #[at("/post/:slug")]
-    Post { slug: String },
-    #[at("/posts/new")]
+    #[at("/editor")]
     NewPost,
+    #[at("/editor/:slug")]
+    EditPost { slug: String },
+    #[at("/posts/:slug")]
+    Post { slug: String },
     #[at("/profile/:display_name")]
     Profile { display_name: String },
     #[at("/profile/:display_name/follow")]
@@ -53,8 +55,9 @@ fn switch(route: AppRoute) -> Html {
         AppRoute::SignUp => html! { <SignUp /> },
         AppRoute::Login => html! { <Login /> },
         AppRoute::Settings => html! { <Settings /> },
+        AppRoute::NewPost => html! { <Editor /> },
+        AppRoute::EditPost { slug } => html! { <Editor slug={slug} /> },
         AppRoute::Post { slug } => html! { <Post slug={slug} /> },
-        AppRoute::NewPost => html! { <NewPost /> },
         AppRoute::Profile { display_name } => html! {
             <Profile display_name={display_name} tab={ProfileTab::ByAuthor} />
         },
