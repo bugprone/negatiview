@@ -21,9 +21,10 @@ pub struct Props {
 
 #[function_component(PostList)]
 pub fn post_list(props: &Props) -> Html {
+    let filter = use_state(|| props.filter.clone());
     let current_page = use_state(|| usize::default());
     let post_list = {
-        let filter = props.filter.clone();
+        let filter = (*filter).clone();
         let current_page = current_page.clone();
 
         use_async(async move {
@@ -44,7 +45,7 @@ pub fn post_list(props: &Props) -> Html {
                 current_page.set(0);
                 || ()
             },
-            props.filter.clone(),
+            filter.clone(),
         );
     }
 
@@ -55,7 +56,7 @@ pub fn post_list(props: &Props) -> Html {
                 post_list.run();
                 || ()
             },
-            (props.filter.clone(), *current_page),
+            (filter.clone(), *current_page),
         )
     }
 
@@ -72,15 +73,15 @@ pub fn post_list(props: &Props) -> Html {
     if let Some(resp) = &post_list.data {
         if !resp.data.posts.is_empty() {
             html! {
-                <>
+                <div class="container px-4">
                     { for resp.data.posts.iter().map(|post| {
-                        html! { <PostPreview post = {post.clone()} /> }
+                        html! { <PostPreview post = { post.clone() } /> }
                     })}
                     <ListPagination
                         total = { resp.data.count }
                         current_page = { *current_page }
                         callback = { callback } />
-                </>
+                </div>
             }
         } else {
             html! {

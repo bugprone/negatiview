@@ -2,6 +2,7 @@ use yew::prelude::*;
 
 use crate::components::banner::Banner;
 use crate::components::post_list::{PostList, PostListFilter};
+use crate::components::tag::Tags;
 use crate::middlewares::context::use_user_context;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
@@ -16,7 +17,7 @@ pub enum Tab {
     Tag,
 }
 
-#[function_component(MainPage)]
+#[function_component(MainView)]
 pub fn main_page(props: &Props) -> Html {
     let user_ctx = use_user_context();
     let tab = use_state(|| {
@@ -70,24 +71,91 @@ pub fn main_page(props: &Props) -> Html {
     }
 
     html! {
-        <div class="col-span-9">
-            <div class="grid grid-cols-12 gap-4">
-                <div class="col-span-12 sm:col-span-12 md:col-span-9">
-                    <div class="posts">
-                        <ul class="flex flex-wrap space-x-2">
-                        </ul>
-                    </div>
-                </div>
+        <div class="container mx-auto">
+            <h1 class="text-xl font-semibold px-4"> { "Posts" } </h1>
+            <div class="mt-4 px-4">
+                <ul class="flex space-x-4">
+                    { global_feed_tab(tab.clone()) }
+                    {
+                        if user_ctx.is_authenticated() {
+                            your_feed_tab(tab.clone())
+                        } else {
+                            html! {}
+                        }
+                    }
+                    { tag_filter_tab(tab.clone(), props) }
+                </ul>
             </div>
+
             <PostList filter = {(*filter).clone()} />
         </div>
     }
 }
 
+fn your_feed_tab(tab: UseStateHandle<Tab>) -> Html {
+    let (onclick, class) = get_tab_msg_class(tab, Tab::Feed);
+
+    html! {
+        <li class={class}>
+            <a href="" onclick={onclick}>
+                { "Your Feed" }
+            </a>
+        </li>
+    }
+}
+
+fn global_feed_tab(tab: UseStateHandle<Tab>) -> Html {
+    let (onclick, class) = get_tab_msg_class(tab, Tab::All);
+
+    html! {
+        <li class={class}>
+            <a href="" onclick={onclick}>
+                { "Global Feed" }
+            </a>
+        </li>
+    }
+}
+
+fn tag_filter_tab(tab: UseStateHandle<Tab>, props: &Props) -> Html {
+    if let Some(tag) = &props.tag {
+        let (onclick, class) = get_tab_msg_class(tab, Tab::Tag);
+
+        html! {
+            <li class={class}>
+                <a href="" onclick={onclick}>
+                    <i class="ion-pound"></i>
+                    { &tag }
+                </a>
+            </li>
+        }
+    } else {
+        html! {}
+    }
+}
+
+fn get_tab_msg_class(current_tab: UseStateHandle<Tab>, tab: Tab) -> (Callback<MouseEvent>, String) {
+    let class = if *current_tab == tab {
+        "text-indigo-600 font-semibold border-b-2 border-indigo-600".to_string()
+    } else {
+        "text-gray-400".to_string()
+    };
+
+    let callback = {
+        Callback::from(move |e: MouseEvent| {
+            e.prevent_default();
+            if *current_tab != tab {
+                current_tab.set(tab.clone());
+            }
+        })
+    };
+
+    (callback, class)
+}
+
 #[function_component(Home)]
 pub fn home() -> Html {
     let tag: UseStateHandle<Option<String>> = use_state(|| None);
-    let _callback = {
+    let callback = {
         let tag = tag.clone();
         Callback::from(move |t| {
             tag.set(Some(t));
@@ -97,14 +165,13 @@ pub fn home() -> Html {
     html! {
         <div>
             <Banner />
-            <div class="container mx-4 py-8">
-                <div class="grid grid-cols-12 gap-4">
-                    <MainPage tag={(*tag).clone()} />
-                    <div class="col-span-12 sm:col-span-12 md:col-span-3">
-                        <div class="max-w-screen-lg mx-auto p-4">
-                            <h1 class="text-3xl font-semibold mb-4"> { "Sidebar" } </h1>
-                        </div>
-                    </div>
+            <div class="container grid grid-cols-12 gap-4 mx-auto py-8">
+                <div class="col-span-9">
+                    <MainView tag={(*tag).clone()} />
+                </div>
+                <div class="col-span-3">
+                    <h1 class="text-xl font-semibold mb-4"> { "Popular Tags" } </h1>
+                    <Tags {callback} />
                 </div>
             </div>
         </div>

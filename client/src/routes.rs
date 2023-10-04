@@ -62,7 +62,7 @@ fn switch(route: AppRoute) -> Html {
             <Profile display_name={display_name} tab={ProfileTab::ByAuthor} />
         },
         AppRoute::Follow { display_name } => html! {
-            <Profile display_name={display_name} tab={ProfileTab::FollowedBy} />
+            <Profile display_name={display_name} tab={ProfileTab::FavoritedBy} />
         },
         AppRoute::NotFound => html! { <p class="text-red-500">{ "Page not found" }</p> },
     }

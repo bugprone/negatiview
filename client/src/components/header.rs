@@ -9,10 +9,10 @@ pub fn header() -> Html {
     let user_ctx = use_user_context();
     html! {
         <nav class="bg-white p-4">
-            <div class="container mx-auto flex justify-between items-center">
-                <div class="text-black text-2xl font-bold">
-                    <Link<AppRoute> to={ AppRoute::Home }>{ "Negatiview" }</Link<AppRoute >>
-                </div>
+            <div class="mx-auto flex justify-between items-center">
+                <Link<AppRoute> to={ AppRoute::Home } classes="text-black text-2xl font-bold">
+                    { "Negatiview" }
+                </Link<AppRoute >>
                 {
                     if user_ctx.is_authenticated() {
                         logged_in_view(&user_ctx)
@@ -48,13 +48,6 @@ fn logged_out_view() -> Html {
 }
 
 fn logged_in_view(user_ctx: &UserUseStateHandle) -> Html {
-    let on_logout = {
-        let user_ctx = user_ctx.clone();
-        Callback::from(move |_| {
-            user_ctx.logout();
-        })
-    };
-
     html! {
         <ul class="flex space-x-6">
             <li>
@@ -71,11 +64,6 @@ fn logged_in_view(user_ctx: &UserUseStateHandle) -> Html {
                 <Link<AppRoute> to={AppRoute::Settings} classes="text-black hover:underline">
                     { "Settings" }
                 </Link<AppRoute>>
-            </li>
-            <li>
-                <button onclick={on_logout} class="text-black hover:underline">
-                    { "Logout" }
-                </button>
             </li>
             <li>
                 <Link<AppRoute> to={AppRoute::Profile { display_name: user_ctx.display_name.clone()}} classes="text-black hover:underline font-semibold">

@@ -120,6 +120,13 @@ pub fn setting() -> Html {
         })
     };
 
+    let on_logout = {
+        let user_ctx = user_ctx.clone();
+        Callback::from(move |_| {
+            user_ctx.logout();
+        })
+    };
+
     html! {
         <div class="max-w-md mx-auto mt-12 mb-12">
             <h1 class="text-center text-xl font-semibold">{ "My Settings" }</h1>
@@ -191,6 +198,13 @@ pub fn setting() -> Html {
                         {"Update"}
                     </button>
                 </div>
+                <p class="text-center text-sm">
+                    { "Otherwise, you have the option to " }
+                    <span class="text-blue-500 hover:underline" onclick={on_logout}>
+                        { "logout" }
+                    </span>
+                    { "." }
+                </p>
             </form>
         </div>
     }

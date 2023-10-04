@@ -33,7 +33,7 @@ pub fn post(props: &Props) -> Html {
         html! {
             <div>
                 <div class="bg-gradient-to-r from-indigo-800 to-gray-800 text-white py-8">
-                    <div>
+                    <div class="lg:w-4/5 mx-auto">
                         <h1 class="px-4 mb-4 text-3xl font-bold">{&post.title}</h1>
                         <PostMeta
                             slug={ post.slug.clone() }
@@ -43,8 +43,7 @@ pub fn post(props: &Props) -> Html {
                         />
                     </div>
                 </div>
-
-                <div class="mx-auto py-4 px-4">
+                <div class="lg:w-4/5 mx-auto py-4 px-4">
                     <div class="row">
                         <div class="col-xs-12">
                             { view_body(&post.body) }

@@ -91,21 +91,21 @@ pub async fn post_list(
                 tags,
                 posts.created_at,
                 posts.updated_at,
-                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
+                EXISTS (SELECT 1 FROM post_favorites WHERE post_id = posts.id AND user_id = $1) "favorited!",
                 COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = posts.id), 0) "favorites_count!",
                 author.display_name AS author_display_name,
                 author.biography AS author_biography,
                 author.profile_image_url AS author_profile_image_url,
                 EXISTS ( SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
             FROM posts
-            INNER JOIN "users" AS author ON author.id = posts.user_id
+            INNER JOIN users AS author ON author.id = posts.user_id
             WHERE ( $2::TEXT IS NULL OR tags @> array[$2] )
                 AND ( $3::TEXT IS NULL OR author.display_name = $3 )
                 AND (
                     $4::TEXT IS NULL OR EXISTS (
                         SELECT 1 FROM users
                         INNER JOIN post_favorites ON users.id = post_favorites.user_id
-                        WHERE display_name = $4
+                        WHERE display_name = $4 AND posts.id = post_favorites.post_id
                     )
                 )
             ORDER BY posts.created_at DESC
@@ -244,6 +244,91 @@ pub async fn new_post(
     let json_response = json!({
         "status": "success",
         "message": "Post created",
+        "data": post
+    });
+
+    Ok((StatusCode::CREATED, Json(json_response)))
+}
+
+pub async fn favorite_post(
+    Extension(jwt_claims): Extension<JwtClaims>,
+    State(data): State<Arc<AppState>>,
+    Path(slug): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user = &jwt_claims.user;
+    let post = sqlx::query_as!(
+        Post,
+        r#"
+            WITH the_post AS (
+                SELECT * FROM posts WHERE slug = $1
+            ),
+            favorite AS (
+                INSERT INTO post_favorites (user_id, post_id)
+                SELECT $2, id FROM the_post
+                ON CONFLICT DO NOTHING
+            )
+            SELECT * FROM the_post
+        "#,
+        slug,
+        user.id
+    )
+        .fetch_optional(&data.db)
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to favorite post: {err}"),
+                }))
+            )
+        })?;
+
+    let json_response = json!({
+        "status": "success",
+        "message": "Post favorited",
+        "data": post
+    });
+
+    Ok((StatusCode::CREATED, Json(json_response)))
+}
+
+pub async fn unfavorite_post(
+    Extension(jwt_claims): Extension<JwtClaims>,
+    State(data): State<Arc<AppState>>,
+    Path(slug): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user = &jwt_claims.user;
+    let post = sqlx::query_as!(
+        Post,
+        r#"
+            WITH the_post AS (
+                SELECT * FROM posts WHERE slug = $1
+            ),
+            unfavorite AS (
+                DELETE FROM post_favorites
+                WHERE post_id = (SELECT id FROM the_post) AND user_id = $2
+            )
+            SELECT * FROM the_post
+        "#,
+        slug,
+        user.id
+    )
+        .fetch_optional(&data.db)
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to favorite post: {err}"),
+                }))
+            )
+        })?;
+
+    let json_response = json!({
+        "status": "success",
+        "message": "Post favorited",
         "data": post
     });
 

@@ -10,7 +10,7 @@ use crate::services::profile::{follow, get, unfollow};
 #[derive(Clone, PartialEq, Eq)]
 pub enum ProfileTab {
     ByAuthor,
-    FollowedBy,
+    FavoritedBy,
 }
 
 #[derive(Properties, Clone, PartialEq, Eq)]
@@ -60,6 +60,7 @@ pub fn profile(props: &Props) -> Html {
                 if let Some(resp) = &follow.data {
                     profile.update(resp.clone());
                 }
+                || ()
             },
             follow.clone(),
         );
@@ -115,22 +116,22 @@ pub fn profile(props: &Props) -> Html {
                 </div>
                 <div class="mx-auto">
                     <div>
-                        <div class="col-xs-12 col-md-10 mx-auto">
-                            <div class="mt-4">
-                                <ul class="nav nav-pills outline-active">
-                                    <li class="nav-item">
-                                        <div class={if props.tab == ProfileTab::ByAuthor { "nav-link active" } else { "nav-link" }}>
-                                            <Link<AppRoute> to={AppRoute::Profile { display_name: profile.display_name.clone() }}>
-                                                { "My Articles" }
-                                            </Link<AppRoute>>
-                                        </div>
+                        <div class="col-xs-12 md:col-md-10 mx-auto">
+                            <div class="mt-4 px-4">
+                                <ul class="flex space-x-4">
+                                    <li>
+                                        <Link<AppRoute>
+                                            to={AppRoute::Profile { display_name: profile.display_name.clone() }}
+                                            classes={if props.tab == ProfileTab::ByAuthor { "text-indigo-600 font-semibold border-b-2 border-indigo-600" } else { "text-gray-400" }}>
+                                            { "My Articles" }
+                                        </Link<AppRoute>>
                                     </li>
-                                    <li class="nav-item">
-                                        <div class={if props.tab != ProfileTab::ByAuthor { "nav-link active" } else { "nav-link" }}>
-                                            <Link<AppRoute> to={AppRoute::Follow { display_name: profile.display_name.clone() }}>
-                                                { "Favorited Articles" }
-                                            </Link<AppRoute>>
-                                        </div>
+                                    <li>
+                                        <Link<AppRoute>
+                                            to={AppRoute::Follow { display_name: profile.display_name.clone() }}
+                                            classes={if props.tab != ProfileTab::ByAuthor { "text-indigo-600 font-semibold border-b-2 border-indigo-600" } else { "text-gray-400" }}>
+                                            { "Favorited Articles" }
+                                        </Link<AppRoute>>
                                     </li>
                                 </ul>
                             </div>
@@ -139,7 +140,7 @@ pub fn profile(props: &Props) -> Html {
                                     ProfileTab::ByAuthor => {
                                         html! { <PostList filter={PostListFilter::ByAuthor(profile.display_name.clone())} /> }
                                     }
-                                    ProfileTab::FollowedBy => {
+                                    ProfileTab::FavoritedBy => {
                                         html! { <PostList filter={PostListFilter::FavoritedBy(profile.display_name.clone())} /> }
                                     }
                                 }

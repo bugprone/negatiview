@@ -25,7 +25,7 @@ pub async fn favorited_by(author: String, page: usize) -> Result<Wrapper<PostsDt
 }
 
 pub async fn favorite(slug: String) -> Result<Wrapper<PostDto>, Error> {
-    request_get::<Wrapper<PostDto>>(format!("/posts/{}/favorite", slug)).await
+    request_post::<(), Wrapper<PostDto>>(format!("/posts/{}/favorite", slug), ()).await
 }
 
 pub async fn unfavorite(slug: String) -> Result<Wrapper<PostDto>, Error> {

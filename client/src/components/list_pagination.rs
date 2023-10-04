@@ -15,21 +15,21 @@ pub fn list_pagination(props: &Props) -> Html {
         return html! {};
     }
 
-    let max_page = (props.total as f32 / 10.0).ceil() as usize;
+    let max_page = (props.total as f32 / ITEMS_PER_PAGE as f32).ceil() as usize;
     let mut pages: Vec<usize> = vec![];
     for page in 0..max_page {
         pages.push(page);
     }
 
     html! {
-        <nav>
-            <ul class="pagination">
+        <nav class="flex justify-center">
+            <ul class="inline-flex -space-x-px text-sm">
             {for pages.iter().map(|page| {
                 let is_current = page == &props.current_page;
                 let page_item_class = if is_current {
-                    "pages-item active"
+                    "flex items-center justify-center px-3 h-8 text-blue-600 border border-gray-300 bg-blue-50 hover:bg-blue-100 hover:text-blue-700"
                 } else {
-                    "pages-item"
+                    "flex items-center justify-center px-3 h-8 leading-tight text-gray-500 bg-white border border-gray-300 hover:bg-gray-100 hover:text-gray-700"
                 };
                 let page = *page;
                 let callback = props.callback.clone();
@@ -39,9 +39,8 @@ pub fn list_pagination(props: &Props) -> Html {
                 });
                 html! {
                     <li
-                        class={page_item_class}
                         onclick={onclick}>
-                        <a class="pages-link" href="">{page + 1}</a>
+                        <a href="" class={page_item_class}>{page + 1}</a>
                     </li>
                 }
             })}
