@@ -28,13 +28,13 @@ pub fn post(props: &Props) -> Html {
         let post = &resp.data;
         let can_modify =
             user_ctx.is_authenticated() && user_ctx.display_name == post.author.display_name;
-        let created_at = post.created_at.format("%B %e %Y").to_string();
+        let created_at = post.created_at.format("%B %e, %Y").to_string();
 
         html! {
             <div>
-                <div class="bg-indigo-600 py-12 text-white">
-                    <div class="mx-auto text-center">
-                        <h1 class="text-3xl font-bold">{&post.title}</h1>
+                <div class="bg-gradient-to-r from-indigo-800 to-gray-800 text-white py-8">
+                    <div>
+                        <h1 class="px-4 mb-4 text-3xl font-bold">{&post.title}</h1>
                         <PostMeta
                             slug={ post.slug.clone() }
                             author={ post.author.clone() }
@@ -44,15 +44,15 @@ pub fn post(props: &Props) -> Html {
                     </div>
                 </div>
 
-                <div class="mx-auto py-6 px-4">
+                <div class="mx-auto py-4 px-4">
                     <div class="row">
                         <div class="col-xs-12">
                             { view_body(&post.body) }
                             <ul class="flex mt-4">
                                 {for post.tags.iter().map(|tag| {
                                     html! {
-                                        <li class="bg-gray-200 text-gray-600 px-2 py-1 rounded-full mr-2">
-                                            { tag }
+                                        <li class="mr-2 inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 rounded-full">
+                                            { format!("#{}", tag) }
                                         </li>
                                     }
                                 })}

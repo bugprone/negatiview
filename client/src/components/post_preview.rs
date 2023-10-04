@@ -53,16 +53,16 @@ pub fn post_preview(props: &Props) -> Html {
     };
 
     html! {
-        <div class="bg-white rounded-lg shadow-lg p-6 my-4">
+        <div class="bg-indigo-50 rounded-lg shadow-lg p-6 my-4">
             <div class="flex items-center mb-4">
-                <img src={post.author.profile_image_url.clone()} alt="Author Image" class="w-8 h-8 rounded-full mr-2" />
-                <div class="info">
+                <img src={post.author.profile_image_url.clone()} alt="Author Image" class="w-10 h-10 rounded-full mr-2" />
+                <div>
                     <div class="text-indigo-600 hover:underline">
                         <Link<AppRoute> to={AppRoute::Profile { display_name: post.author.display_name.clone() }}>
                             { &post.author.display_name }
                         </Link<AppRoute>>
                     </div>
-                    <span class="text-gray-500">
+                    <span class="text-gray-500 text-sm">
                         { &post.created_at.format("%B %e, %Y") }
                     </span>
                 </div>
@@ -88,8 +88,8 @@ pub fn post_preview(props: &Props) -> Html {
             <ul class="tag-list mt-4">
                 {for post.tags.iter().map(|tag| {
                     html! {
-                        <li class="tag-default tag-pill tag-outline bg-gray-200 text-gray-600 px-2 py-1 rounded-full mr-2" key={ (&tag).to_string() }>
-                            { &tag }
+                        <li class="mr-2 inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 rounded-full" key={ (&tag).to_string() }>
+                            { format!("#{}", &tag) }
                         </li>
                     }
                 })}

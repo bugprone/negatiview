@@ -68,12 +68,17 @@ fn logged_in_view(user_ctx: &UserUseStateHandle) -> Html {
                 </Link<AppRoute>>
             </li>
             <li>
+                <Link<AppRoute> to={AppRoute::Settings} classes="text-black hover:underline">
+                    { "Settings" }
+                </Link<AppRoute>>
+            </li>
+            <li>
                 <button onclick={on_logout} class="text-black hover:underline">
                     { "Logout" }
                 </button>
             </li>
             <li>
-                <Link<AppRoute> to={AppRoute::Settings} classes="text-black hover:underline font-semibold">
+                <Link<AppRoute> to={AppRoute::Profile { display_name: user_ctx.display_name.clone()}} classes="text-black hover:underline font-semibold">
                     { &user_ctx.display_name }
                 </Link<AppRoute >>
             </li>

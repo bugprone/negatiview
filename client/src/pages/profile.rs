@@ -140,7 +140,7 @@ pub fn profile(props: &Props) -> Html {
                                         html! { <PostList filter={PostListFilter::ByAuthor(profile.display_name.clone())} /> }
                                     }
                                     ProfileTab::FollowedBy => {
-                                        html! { <PostList filter={PostListFilter::StarredBy(profile.display_name.clone())} /> }
+                                        html! { <PostList filter={PostListFilter::FavoritedBy(profile.display_name.clone())} /> }
                                     }
                                 }
                             }

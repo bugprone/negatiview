@@ -230,7 +230,7 @@ pub fn editor(props: &Props) -> Html {
                                             })
                                         };
                                         html! {
-                                            <span id="badge-dismiss-indigo" class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 rounded">
+                                            <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 rounded">
                                                 { format!("#{}", &tag) }
                                                 <button type="button" class="inline-flex items-center p-1 ml-1 text-sm text-indigo-400 bg-transparent rounded-sm hover:bg-indigo-200 hover:text-indigo-600" data-dismiss-target="#badge-dismiss-indigo" aria-label="Remove" onclick={onclick_remove}>
                                                     <svg class="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">

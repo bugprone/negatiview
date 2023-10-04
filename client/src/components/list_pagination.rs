@@ -1,12 +1,12 @@
 use yew::prelude::*;
 
-const ITEMS_PER_PAGE: u32 = 10;
+const ITEMS_PER_PAGE: usize = 10;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
-    pub total: u32,
-    pub current_page: u32,
-    pub callback: Callback<u32>,
+    pub total: usize,
+    pub current_page: usize,
+    pub callback: Callback<usize>,
 }
 
 #[function_component(ListPagination)]
@@ -15,8 +15,8 @@ pub fn list_pagination(props: &Props) -> Html {
         return html! {};
     }
 
-    let max_page = (props.total as f32 / 10.0).ceil() as u32;
-    let mut pages: Vec<u32> = vec![];
+    let max_page = (props.total as f32 / 10.0).ceil() as usize;
+    let mut pages: Vec<usize> = vec![];
     for page in 0..max_page {
         pages.push(page);
     }

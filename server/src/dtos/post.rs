@@ -31,3 +31,9 @@ pub struct PostDto {
     pub updated_at: DateTime<Utc>,
     pub author: ProfileDto,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct PostsDto {
+    pub posts: Vec<PostDto>,
+    pub count: usize,
+}

@@ -97,7 +97,7 @@ pub fn home() -> Html {
     html! {
         <div>
             <Banner />
-            <div class="container mx-auto py-8">
+            <div class="container mx-4 py-8">
                 <div class="grid grid-cols-12 gap-4">
                     <MainPage tag={(*tag).clone()} />
                     <div class="col-span-12 sm:col-span-12 md:col-span-3">

@@ -1,16 +1,27 @@
 use std::sync::Arc;
 
 use axum::{Extension, Json};
-use axum::extract::{Path, State};
+use axum::extract::{Path, Query, State};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use futures::{TryFutureExt, TryStreamExt};
+use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::config::AppState;
-use crate::dtos::post::NewPostDto;
+use crate::dtos::post::{NewPostDto, PostDto, PostsDto};
 use crate::dtos::Wrapper;
 use crate::middlewares::auth::JwtClaims;
 use crate::models::post::{Post, PostFromQuery};
+
+#[derive(Deserialize, Default)]
+pub struct PostQuery {
+    tag: Option<String>,
+    author: Option<String>,
+    favorited: Option<String>,
+    limit: Option<i64>,
+    offset: Option<i64>,
+}
 
 pub async fn get_post(
     Extension(jwt_claims): Extension<JwtClaims>,
@@ -29,17 +40,12 @@ pub async fn get_post(
                 tags,
                 posts.created_at,
                 posts.updated_at,
-                EXISTS
-                    (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
-                COALESCE(
-                    (SELECT COUNT(*) FROM post_favorites WHERE post_id = posts.id),
-                    0
-                ) "favorites_count!",
+                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
+                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = posts.id), 0) "favorites_count!",
                 author.display_name AS author_display_name,
                 author.biography AS author_biography,
                 author.profile_image_url AS author_profile_image_url,
-                EXISTS
-                    (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
+                EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
             FROM posts
             INNER JOIN "users" AS author ON author.id = posts.user_id
             WHERE slug = $2
@@ -63,6 +69,137 @@ pub async fn get_post(
         "status": "success",
         "message": "Post fetched",
         "data": post.into_post_dto()
+    });
+
+    Ok((StatusCode::OK, Json(json_response)))
+}
+
+pub async fn post_list(
+    Extension(jwt_claims): Extension<JwtClaims>,
+    State(data): State<Arc<AppState>>,
+    query: Query<PostQuery>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user = &jwt_claims.user;
+    let posts: Vec<PostDto> = sqlx::query_as!(
+        PostFromQuery,
+        r#"
+            SELECT
+                slug,
+                title,
+                description,
+                body,
+                tags,
+                posts.created_at,
+                posts.updated_at,
+                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
+                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = posts.id), 0) "favorites_count!",
+                author.display_name AS author_display_name,
+                author.biography AS author_biography,
+                author.profile_image_url AS author_profile_image_url,
+                EXISTS ( SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
+            FROM posts
+            INNER JOIN "users" AS author ON author.id = posts.user_id
+            WHERE ( $2::TEXT IS NULL OR tags @> array[$2] )
+                AND ( $3::TEXT IS NULL OR author.display_name = $3 )
+                AND (
+                    $4::TEXT IS NULL OR EXISTS (
+                        SELECT 1 FROM users
+                        INNER JOIN post_favorites ON users.id = post_favorites.user_id
+                        WHERE display_name = $4
+                    )
+                )
+            ORDER BY posts.created_at DESC
+            LIMIT $5
+            OFFSET $6
+        "#,
+        user.id,
+        query.tag,
+        query.author,
+        query.favorited,
+        query.limit.unwrap_or(10),
+        query.offset.unwrap_or(0),
+    )
+        .fetch(&data.db)
+        .map_ok(|post| post.into_post_dto())
+        .try_collect()
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to get posts: {err}"),
+                }))
+            )
+        })
+        .await?;
+
+    let json_response = json!({
+        "status": "success",
+        "message": "Posts fetched",
+        "data": PostsDto {
+            count: posts.len(),
+            posts,
+        }
+    });
+
+    Ok((StatusCode::OK, Json(json_response)))
+}
+
+pub async fn feed_list(
+    Extension(jwt_claims): Extension<JwtClaims>,
+    State(data): State<Arc<AppState>>,
+    query: Query<PostQuery>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user = &jwt_claims.user;
+    let posts: Vec<PostDto> = sqlx::query_as!(
+        PostFromQuery,
+        r#"
+            SELECT
+                slug,
+                title,
+                description,
+                body,
+                tags,
+                posts.created_at,
+                posts.updated_at,
+                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
+                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = posts.id), 0) "favorites_count!",
+                author.display_name AS author_display_name,
+                author.biography AS author_biography,
+                author.profile_image_url AS author_profile_image_url,
+                TRUE "following_author!"
+            FROM user_follows
+            INNER JOIN posts on follower_user_id = posts.user_id
+            INNER JOIN "users" AS author ON author.id = posts.user_id
+            WHERE followee_user_id = $1
+            LIMIT $2
+            OFFSET $3
+        "#,
+        user.id,
+        query.limit.unwrap_or(10),
+        query.offset.unwrap_or(0),
+    )
+        .fetch(&data.db)
+        .map_ok(|post| post.into_post_dto())
+        .try_collect()
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to get posts: {err}"),
+                }))
+            )
+        })
+        .await?;
+
+    let json_response = json!({
+        "status": "success",
+        "message": "Posts fetched",
+        "data": PostsDto {
+            count: posts.len(),
+            posts,
+        }
     });
 
     Ok((StatusCode::OK, Json(json_response)))

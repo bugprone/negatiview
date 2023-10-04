@@ -11,7 +11,7 @@ pub enum PostListFilter {
     ByAuthor(String),
     ByTag(String),
     Feed,
-    StarredBy(String),
+    FavoritedBy(String),
 }
 
 #[derive(Properties, Clone, PartialEq, Eq)]
@@ -21,7 +21,7 @@ pub struct Props {
 
 #[function_component(PostList)]
 pub fn post_list(props: &Props) -> Html {
-    let current_page = use_state(|| 0u32);
+    let current_page = use_state(|| usize::default());
     let post_list = {
         let filter = props.filter.clone();
         let current_page = current_page.clone();
@@ -31,8 +31,8 @@ pub fn post_list(props: &Props) -> Html {
                 PostListFilter::All => { all(*current_page).await }
                 PostListFilter::ByAuthor(author) => { by_author(author, *current_page).await }
                 PostListFilter::ByTag(tag) => { by_tag(tag, *current_page).await }
+                PostListFilter::FavoritedBy(author) => { favorited_by(author, *current_page).await }
                 PostListFilter::Feed => { feed().await }
-                PostListFilter::StarredBy(author) => { favorited_by(author, *current_page).await }
             }
         })
     };
@@ -69,15 +69,15 @@ pub fn post_list(props: &Props) -> Html {
         )
     };
 
-    if let Some(post_list) = &post_list.data {
-        if !post_list.posts.is_empty() {
+    if let Some(resp) = &post_list.data {
+        if !resp.data.posts.is_empty() {
             html! {
                 <>
-                    { for post_list.posts.iter().map(|post| {
+                    { for resp.data.posts.iter().map(|post| {
                         html! { <PostPreview post = {post.clone()} /> }
                     })}
                     <ListPagination
-                        total = { post_list.count }
+                        total = { resp.data.count }
                         current_page = { *current_page }
                         callback = { callback } />
                 </>
@@ -93,80 +93,3 @@ pub fn post_list(props: &Props) -> Html {
         }
     }
 }
-
-// #[derive(Debug, Deserialize)]
-// struct Post {
-//     pub title: String,
-//     pub content: String,
-// }
-//
-// #[derive(Debug, Deserialize)]
-// struct PostListResponse {
-//     pub posts: Vec<Post>,
-// }
-// #[function_component(PostList)]
-// pub fn post_list() -> Html {
-//     let data = use_state(|| None);
-//
-//     {
-//         let data = data.clone();
-//         use_effect(move || {
-//             if data.is_none() {
-//                 spawn_local(async move {
-//                     let resp = Request::get("/services/posts").send().await.unwrap();
-//                     let result = {
-//                         if !resp.ok() {
-//                             Err(format!(
-//                                 "Error fetching data {} ({})",
-//                                 resp.status(),
-//                                 resp.status_text()
-//                             ))
-//                         } else {
-//                             resp.text().await.map_err(|err| err.to_string())
-//                         }
-//                     };
-//                     data.set(Some(result));
-//                 });
-//             }
-//
-//             || ()
-//         });
-//     }
-//
-//     match data.as_ref() {
-//         None => {
-//             html! {
-//                <div class="text-center mt-4"> { "Loading" } </div>
-//             }
-//         }
-//         Some(Ok(data)) => {
-//             let resp: PostListResponse = serde_json::from_str(&data).unwrap();
-//
-//             html! {
-//                 <div class="max-w-screen-lg mx-auto p-4">
-//                     <h1 class="text-3xl font-semibold mb-4"> { "Posts" } </h1>
-//                     <div class="space-y-4">
-//                         { for resp.posts.iter().map(|post| render_post(post)) }
-//                     </div>
-//                 </div>
-//             }
-//         }
-//         Some(Err(err)) => {
-//             html! {
-//                 <div class="text-center mt-4 text-red-500"> { format!("Server error: {}", err) } </div>
-//             }
-//         }
-//     }
-// }
-//
-// fn render_post(post: &Post) -> Html {
-//     let content_lines: Vec<&str> = post.content.split('\n').collect();
-//
-//     html! {
-//         <div class="p-4 bg-white shadow rounded-lg mb-4">
-//             <h3 class="text-xl font-semibold">{ &post.title }</h3>
-//             <hr class="my-2" />
-//             { for content_lines.iter().map(|line| html! { <p>{ line }</p> }) }
-//         </div>
-//     }
-// }

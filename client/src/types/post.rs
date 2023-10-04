@@ -18,9 +18,9 @@ pub struct PostDto {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct Posts {
+pub struct PostsDto {
     pub posts: Vec<PostDto>,
-    pub count: u32,
+    pub count: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]

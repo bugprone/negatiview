@@ -12,7 +12,7 @@ use tower_http::trace::TraceLayer;
 
 use crate::config::{AppState, Opt};
 use crate::handlers::health_check;
-use crate::handlers::post::{get_post, new_post};
+use crate::handlers::post::{feed_list, get_post, new_post, post_list};
 use crate::handlers::profile::{follow_user, get_user_profile, unfollow_user};
 use crate::handlers::user::{login, me, sign_up, update_me};
 use crate::middlewares::auth::auth;
@@ -62,7 +62,12 @@ pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
                     Router::new()
                         .route(
                             "/",
-                            post(new_post)
+                            get(post_list).post(new_post)
+                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                        )
+                        .route(
+                            "/feed",
+                            get(feed_list)
                                 .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
                         )
                         .route(
