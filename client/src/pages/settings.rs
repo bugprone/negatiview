@@ -33,7 +33,8 @@ pub fn setting() -> Html {
     {
         let user = user.clone();
         let update_dto = update_dto.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            user,
             move |user| {
                 if let Some(user) = &user.data {
                     update_dto.set(UserUpdateDto {
@@ -46,21 +47,20 @@ pub fn setting() -> Html {
                 }
                 || ()
             },
-            user,
         );
     }
 
     {
         let user_ctx = user_ctx.clone();
         let update = update.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            update,
             move |update| {
                 if let Some(user) = &update.data {
                     user_ctx.login_without_redirection(user.data.clone());
                 }
                 || ()
             },
-            update,
         );
     }
 

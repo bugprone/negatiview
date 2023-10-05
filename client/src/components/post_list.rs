@@ -21,10 +21,9 @@ pub struct Props {
 
 #[function_component(PostList)]
 pub fn post_list(props: &Props) -> Html {
-    let filter = use_state(|| props.filter.clone());
     let current_page = use_state(|| usize::default());
     let post_list = {
-        let filter = (*filter).clone();
+        let filter = props.filter.clone();
         let current_page = current_page.clone();
 
         use_async(async move {
@@ -40,33 +39,33 @@ pub fn post_list(props: &Props) -> Html {
 
     {
         let current_page = current_page.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            props.filter.clone(),
             move |_| {
                 current_page.set(0);
                 || ()
-            },
-            filter.clone(),
+            }
         );
     }
 
     {
         let post_list = post_list.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            (props.filter.clone(), *current_page),
             move |_| {
                 post_list.run();
                 || ()
-            },
-            (filter.clone(), *current_page),
+            }
         )
     }
 
     let callback = {
         let current_page = current_page.clone();
         use_callback(
+            (),
             move |page, _| {
                 current_page.set(page);
             },
-            (),
         )
     };
 
@@ -74,9 +73,11 @@ pub fn post_list(props: &Props) -> Html {
         if !resp.data.posts.is_empty() {
             html! {
                 <div class="container px-4">
-                    { for resp.data.posts.iter().map(|post| {
-                        html! { <PostPreview post = { post.clone() } /> }
-                    })}
+                    {
+                        for resp.data.posts.iter().map(|post| {
+                            html! { <PostPreview post = { post.clone() } /> }
+                        })
+                    }
                     <ListPagination
                         total = { resp.data.count }
                         current_page = { *current_page }

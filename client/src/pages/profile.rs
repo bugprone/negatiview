@@ -44,25 +44,25 @@ pub fn profile(props: &Props) -> Html {
 
     {
         let profile = profile.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            props.display_name.clone(),
             move |_| {
                 profile.run();
                 || ()
             },
-            props.display_name.clone(),
         );
     }
 
     {
         let profile = profile.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            follow.clone(),
             move |follow| {
                 if let Some(resp) = &follow.data {
                     profile.update(resp.clone());
                 }
                 || ()
             },
-            follow.clone(),
         );
     }
 
@@ -128,7 +128,7 @@ pub fn profile(props: &Props) -> Html {
                                     </li>
                                     <li>
                                         <Link<AppRoute>
-                                            to={AppRoute::Follow { display_name: profile.display_name.clone() }}
+                                            to={AppRoute::ProfileFavorite { display_name: profile.display_name.clone() }}
                                             classes={if props.tab != ProfileTab::ByAuthor { "text-indigo-600 font-semibold border-b-2 border-indigo-600" } else { "text-gray-400" }}>
                                             { "Favorited Articles" }
                                         </Link<AppRoute>>

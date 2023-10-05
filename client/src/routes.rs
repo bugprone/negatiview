@@ -40,8 +40,8 @@ pub enum AppRoute {
     Post { slug: String },
     #[at("/profile/:display_name")]
     Profile { display_name: String },
-    #[at("/profile/:display_name/follow")]
-    Follow { display_name: String },
+    #[at("/profile/:display_name/favorite")]
+    ProfileFavorite { display_name: String },
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -55,13 +55,16 @@ fn switch(route: AppRoute) -> Html {
         AppRoute::SignUp => html! { <SignUp /> },
         AppRoute::Login => html! { <Login /> },
         AppRoute::Settings => html! { <Settings /> },
-        AppRoute::NewPost => html! { <Editor /> },
+        AppRoute::NewPost => {
+            let slug:Option<String> = None;
+            html! { <Editor slug={slug}/> }
+        },
         AppRoute::EditPost { slug } => html! { <Editor slug={slug} /> },
         AppRoute::Post { slug } => html! { <Post slug={slug} /> },
         AppRoute::Profile { display_name } => html! {
             <Profile display_name={display_name} tab={ProfileTab::ByAuthor} />
         },
-        AppRoute::Follow { display_name } => html! {
+        AppRoute::ProfileFavorite { display_name } => html! {
             <Profile display_name={display_name} tab={ProfileTab::FavoritedBy} />
         },
         AppRoute::NotFound => html! { <p class="text-red-500">{ "Page not found" }</p> },

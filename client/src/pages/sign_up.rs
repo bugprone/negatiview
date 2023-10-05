@@ -20,14 +20,14 @@ pub fn sign_up_page() -> Html {
         })
     };
 
-    use_effect_with_deps(
+    use_effect_with(
+        sign_up.clone(),
         move |sign_up| {
             if let Some(resp) = &sign_up.data {
                 user_ctx.login(resp.data.clone());
             }
             || ()
         },
-        sign_up.clone(),
     );
 
     let onsubmit = {

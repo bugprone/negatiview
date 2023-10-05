@@ -41,21 +41,22 @@ pub fn editor(props: &Props) -> Html {
 
     {
         let post_get = post_get.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            props.slug.clone(),
             move |slug| {
                 if slug.is_some() {
                     post_get.run();
                 }
                 || ()
             },
-            props.slug.clone(),
         );
     }
 
     {
         let update_dto = update_dto.clone();
         let error = error.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            post_get,
             move |post_get| {
                 if let Some(resp) = &post_get.data {
                     update_dto.set(PostUpdateDto {
@@ -72,13 +73,13 @@ pub fn editor(props: &Props) -> Html {
 
                 || ()
             },
-            post_get,
         );
     }
 
     {
         let error = error.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            post_update.clone(),
             move |post_update| {
                 if let Some(resp) = &post_update.data {
                     error.set(None);
@@ -91,7 +92,6 @@ pub fn editor(props: &Props) -> Html {
                 }
                 || ()
             },
-            post_update.clone(),
         );
     }
 

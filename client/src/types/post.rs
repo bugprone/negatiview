@@ -22,7 +22,7 @@ pub struct PostDtoWrapper {
     pub data: PostDto,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PostsDto {
     pub posts: Vec<PostDto>,
     pub count: usize,

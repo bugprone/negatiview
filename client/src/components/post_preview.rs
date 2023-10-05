@@ -28,14 +28,14 @@ pub fn post_preview(props: &Props) -> Html {
     {
         let post = post.clone();
         let favorite = favorite.clone();
-        use_effect_with_deps(
+        use_effect_with(
+            favorite,
             move |favorite| {
                 if let Some(post_dto) = &favorite.data {
                     post.set(post_dto.data.clone());
                 }
                 || ()
             },
-            favorite,
         )
     }
 
@@ -45,7 +45,7 @@ pub fn post_preview(props: &Props) -> Html {
             e.prevent_default();
             favorite.run();
             let mut dto = (*post).clone();
-            if dto.favorited {
+            if post.favorited {
                 dto.favorited = false;
                 dto.favorites_count -= 1;
             } else {
@@ -67,7 +67,7 @@ pub fn post_preview(props: &Props) -> Html {
                         </Link<AppRoute>>
                     </div>
                     <span class="text-gray-500 text-sm">
-                        { &post.created_at.format("%B %e, %Y") }
+                        { format!("{}", &post.created_at.format("%B %e, %Y")) }
                     </span>
                 </div>
                 <div class="absolute top-0 right-0">
