@@ -47,7 +47,7 @@ pub async fn get_post(
                 author.profile_image_url AS author_profile_image_url,
                 EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
             FROM posts
-            INNER JOIN "users" AS author ON author.id = posts.user_id
+            INNER JOIN users AS author ON author.id = posts.user_id
             WHERE slug = $2
         "#,
         user.id,
@@ -169,9 +169,9 @@ pub async fn feed_list(
                 author.profile_image_url AS author_profile_image_url,
                 TRUE "following_author!"
             FROM user_follows
-            INNER JOIN posts on follower_user_id = posts.user_id
-            INNER JOIN "users" AS author ON author.id = posts.user_id
-            WHERE followee_user_id = $1
+            INNER JOIN posts ON followee_user_id = posts.user_id
+            INNER JOIN users AS author ON author.id = user_id
+            WHERE follower_user_id = $1
             LIMIT $2
             OFFSET $3
         "#,
@@ -216,11 +216,30 @@ pub async fn new_post(
     dto.tags.sort();
 
     let post = sqlx::query_as!(
-        Post,
+        PostFromQuery,
         r#"
-            INSERT INTO posts (user_id, slug, title, description, body, tags)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING *
+            WITH the_post AS (
+                INSERT INTO posts (user_id, slug, title, description, body, tags)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                RETURNING
+                    slug,
+                    title,
+                    description,
+                    body,
+                    tags,
+                    created_at,
+                    updated_at
+            )
+            SELECT
+                the_post.*,
+                FALSE "favorited!",
+                0::INT "favorites_count!",
+                display_name AS author_display_name,
+                biography AS author_biography,
+                profile_image_url AS author_profile_image_url,
+                FALSE "following_author!"
+            FROM the_post
+            INNER JOIN users ON users.id = $1
         "#,
         user.id,
         slug,
@@ -244,10 +263,58 @@ pub async fn new_post(
     let json_response = json!({
         "status": "success",
         "message": "Post created",
-        "data": post
+        "data": post.into_post_dto()
     });
 
     Ok((StatusCode::CREATED, Json(json_response)))
+}
+
+pub async fn delete_post(
+    Extension(jwt_claims): Extension<JwtClaims>,
+    State(data): State<Arc<AppState>>,
+    Path(slug): Path<String>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let result = sqlx::query!(
+        r#"
+            WITH the_post AS (
+                DELETE FROM posts WHERE slug = $1 AND user_id = $2
+                RETURNING 1
+            )
+            SELECT
+                EXISTS (SELECT 1 FROM posts WHERE slug = $1) "existed!",
+                EXISTS (SELECT 1 FROM the_post) "deleted!"
+        "#,
+        slug,
+        jwt_claims.user.id
+    )
+        .fetch_one(&data.db)
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to delete post: {err}"),
+                }))
+            )
+        })?;
+
+    if result.deleted {
+        Ok((StatusCode::OK, Json(json!({
+            "status": "success",
+            "message": "Post deleted",
+        }))))
+    } else if result.existed {
+        Err((StatusCode::FORBIDDEN, Json(json!({
+            "status": "fail",
+            "message": "Post is not yours",
+        }))))
+    } else {
+        Err((StatusCode::NOT_FOUND, Json(json!({
+            "status": "fail",
+            "message": "Post not found",
+        }))))
+    }
 }
 
 pub async fn favorite_post(

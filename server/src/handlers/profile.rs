@@ -23,9 +23,9 @@ pub async fn get_user_profile(
         SELECT display_name, biography, profile_image_url,
             EXISTS (
                 SELECT 1 FROM user_follows
-                WHERE followee_user_id = "users".id AND follower_user_id = $2
+                WHERE followee_user_id = users.id AND follower_user_id = $2
             ) "following!"
-            FROM "users"
+            FROM users
             WHERE display_name = $1
         "#,
         display_name,
