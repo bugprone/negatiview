@@ -9,7 +9,7 @@ pub struct Props {
     pub callback: Callback<usize>,
 }
 
-#[function_component(ListPagination)]
+#[function_component(Pagination)]
 pub fn list_pagination(props: &Props) -> Html {
     if props.total < ITEMS_PER_PAGE {
         return html! {};

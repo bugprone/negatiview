@@ -76,7 +76,7 @@ pub fn profile(props: &Props) -> Html {
         let profile = &profile.data;
         html! {
             <div>
-                <div class="bg-white shadow-lg rounded-lg p-6 my-4">
+                <div class="bg-gray-100 shadow-lg rounded-lg p-6 my-4">
                     <div class="mx-auto">
                         <div>
                             <div class="col-xs-12 col-md-10 mx-auto">

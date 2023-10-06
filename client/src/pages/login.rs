@@ -3,6 +3,7 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
+use crate::components::show_error::ShowError;
 use crate::middlewares::context::use_user_context;
 use crate::routes::AppRoute;
 use crate::services::user::login;
@@ -62,6 +63,7 @@ pub fn login_page() -> Html {
     html! {
         <div class="max-w-md mx-auto mt-12 mb-12">
             <h1 class="text-center text-xl font-semibold mb-4">{ "Login" }</h1>
+            <ShowError error={login.error.clone()} />
             <form onsubmit={ onsubmit }>
                 <div class="mb-4">
                     <label for="email" class="block text-sm font-medium text-gray-700">

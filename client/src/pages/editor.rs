@@ -3,6 +3,7 @@ use yew::prelude::*;
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
+use crate::components::show_error::ShowError;
 use crate::routes::AppRoute;
 use crate::services::post::{create, get, update};
 use crate::types::post::PostUpdateDto;
@@ -166,7 +167,7 @@ pub fn editor(props: &Props) -> Html {
         <div class="lg:w-2/3 mx-auto mt-12 mb-12">
             <h1 class="text-center text-xl font-semibold">{ "New Post" }</h1>
             <div class="mt-4">
-                // <ListErrors error={(*error).clone()} />
+                <ShowError error={(*error).clone()} />
                 <form {onsubmit} class="space-y-4">
                     <div class="form-group">
                         <label for="title" class="block text-sm font-medium text-gray-700">

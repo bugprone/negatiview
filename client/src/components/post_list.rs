@@ -1,7 +1,7 @@
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
-use crate::components::list_pagination::ListPagination;
+use crate::components::pagination::Pagination;
 use crate::components::post_preview::PostPreview;
 use crate::services::post::{all, by_author, by_tag, favorited_by, feed};
 
@@ -78,7 +78,7 @@ pub fn post_list(props: &Props) -> Html {
                             html! { <PostPreview post = { post.clone() } /> }
                         })
                     }
-                    <ListPagination
+                    <Pagination
                         total = { resp.data.count }
                         current_page = { *current_page }
                         callback = { callback } />

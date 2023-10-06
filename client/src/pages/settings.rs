@@ -2,6 +2,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
 
+use crate::components::show_error::ShowError;
 use crate::middlewares::context::use_user_context;
 use crate::services::user::{current, save};
 use crate::types::user::UserUpdateDto;
@@ -130,6 +131,8 @@ pub fn setting() -> Html {
     html! {
         <div class="max-w-md mx-auto mt-12 mb-12">
             <h1 class="text-center text-xl font-semibold">{ "My Settings" }</h1>
+            <ShowError error={user.error.clone()} />
+            <ShowError error={update.error.clone()} />
             <form onsubmit={onsubmit} class="mt-4">
                 <div class="mb-4">
                     <label for="email" class="block text-sm font-medium text-gray-700">
