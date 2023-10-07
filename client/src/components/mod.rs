@@ -3,6 +3,7 @@ pub mod show_error;
 pub mod footer;
 pub mod header;
 pub mod pagination;
+pub mod post_action;
 pub mod post_list;
 pub mod post_meta;
 pub mod post_preview;

@@ -38,7 +38,7 @@ pub fn post(props: &Props) -> Html {
                         <PostMeta
                             slug={ post.slug.clone() }
                             author={ post.author.clone() }
-                            can_modify={ can_modify }
+                            can_edit={ can_modify }
                             created_at={ created_at }
                         />
                     </div>
