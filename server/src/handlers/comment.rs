@@ -179,6 +179,7 @@ pub async fn delete_comment(
         Ok((StatusCode::OK, Json(json!({
             "status": "success",
             "message": "Comment deleted",
+            "data": comment_id,
         }))))
     } else if result.existed {
         Err((StatusCode::FORBIDDEN, Json(json!({

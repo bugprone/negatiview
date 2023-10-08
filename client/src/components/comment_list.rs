@@ -26,21 +26,16 @@ pub fn comment_list(props: &Props) -> Html {
 
     let callback_added = {
         let comment_list = comment_list.clone();
-        Callback::from(move |comment_dto| {
-            if let Some(mut list) = comment_list.data.clone() {
-                list.data.comments.insert(0, comment_dto);
-                comment_list.update(list);
-            }
+        Callback::from(move |_| {
+            comment_list.run();
         })
     };
 
     let callback_deleted = {
         let comment_list = comment_list.clone();
-        Callback::from(move |comment_id| {
-            if let Some(mut list) = comment_list.data.clone() {
-                list.data.comments.retain(|c| c.id != comment_id);
-                comment_list.update(list);
-            }
+        Callback::from(move |_| {
+            log::debug!("Deleted comment");
+            comment_list.run();
         })
     };
 

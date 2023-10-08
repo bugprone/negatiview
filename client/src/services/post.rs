@@ -1,8 +1,8 @@
 use crate::middlewares::error::Error;
 use crate::middlewares::pagination::limit;
 use crate::middlewares::request::{request_delete, request_get, request_post, request_put};
-use crate::types::{DeleteWrapper, Wrapper};
 use crate::types::post::{PostDto, PostsDto, PostUpdateDto};
+use crate::types::Wrapper;
 
 pub async fn all(page: usize) -> Result<Wrapper<PostsDto>, Error> {
     request_get::<Wrapper<PostsDto>>(format!("/posts?{}", limit(10, page))).await
@@ -52,6 +52,6 @@ pub async fn update(slug: String, post: Wrapper<PostUpdateDto>) -> Result<Wrappe
         .await
 }
 
-pub async fn del(slug: String) -> Result<DeleteWrapper, Error> {
-    request_delete::<DeleteWrapper>(format!("/posts/{}", slug)).await
+pub async fn del(slug: String) -> Result<Wrapper<String>, Error> {
+    request_delete::<Wrapper<String>>(format!("/posts/{}", slug)).await
 }

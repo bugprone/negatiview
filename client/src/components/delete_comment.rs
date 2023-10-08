@@ -26,11 +26,13 @@ pub fn delete_comment(props: &Props) -> Html {
     };
 
     {
+        let callback = props.callback.clone();
         use_effect_with(
-            (props.callback.clone(), props.comment_id.clone(), delete_comment),
-            move |(callback, comment_id, delete_comment)| {
-                if delete_comment.data.is_some() {
-                    callback.emit(comment_id.clone());
+            delete_comment.clone(),
+            move |delete_comment| {
+                if let Some(delete_comment) = &delete_comment.data {
+                    log::debug!("delete_comment: {:?}", delete_comment.data);
+                    callback.emit(delete_comment.data.clone());
                 }
                 || ()
             },

@@ -303,6 +303,7 @@ pub async fn delete_post(
         Ok((StatusCode::OK, Json(json!({
             "status": "success",
             "message": "Post deleted",
+            "data": slug
         }))))
     } else if result.existed {
         Err((StatusCode::FORBIDDEN, Json(json!({
