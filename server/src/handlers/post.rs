@@ -11,7 +11,7 @@ use serde_json::{json, Value};
 use crate::config::AppState;
 use crate::dtos::post::*;
 use crate::dtos::Wrapper;
-use crate::middlewares::auth::JwtClaims;
+use crate::middlewares::auth::AuthUserClaims;
 use crate::models::post::{Post, PostFromQuery};
 
 #[derive(Deserialize, Default)]
@@ -24,11 +24,11 @@ pub struct PostQuery {
 }
 
 pub async fn get_post(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
         PostFromQuery,
         r#"
@@ -50,7 +50,7 @@ pub async fn get_post(
             INNER JOIN users AS author ON author.id = posts.user_id
             WHERE slug = $2
         "#,
-        user.id,
+        user_id,
         slug,
     )
         .fetch_one(&data.db)
@@ -75,11 +75,11 @@ pub async fn get_post(
 }
 
 pub async fn post_list(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     query: Query<PostQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let posts: Vec<PostDto> = sqlx::query_as!(
         PostFromQuery,
         r#"
@@ -112,7 +112,7 @@ pub async fn post_list(
             LIMIT $5
             OFFSET $6
         "#,
-        user.id,
+        user_id,
         query.tag,
         query.author,
         query.favorited,
@@ -146,11 +146,11 @@ pub async fn post_list(
 }
 
 pub async fn feed_list(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     query: Query<PostQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let posts: Vec<PostDto> = sqlx::query_as!(
         PostFromQuery,
         r#"
@@ -175,7 +175,7 @@ pub async fn feed_list(
             LIMIT $2
             OFFSET $3
         "#,
-        user.id,
+        user_id,
         query.limit.unwrap_or(10),
         query.offset.unwrap_or(0),
     )
@@ -206,11 +206,11 @@ pub async fn feed_list(
 }
 
 pub async fn new_post(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Json(body): Json<Wrapper<NewPostDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let mut dto = body.data;
     let slug = slugify(dto.title.as_str());
     dto.tags.sort();
@@ -241,7 +241,7 @@ pub async fn new_post(
             FROM the_post
             INNER JOIN users ON users.id = $1
         "#,
-        user.id,
+        user_id,
         slug,
         dto.title,
         dto.description,
@@ -270,10 +270,11 @@ pub async fn new_post(
 }
 
 pub async fn delete_post(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let result = sqlx::query!(
         r#"
             WITH the_post AS (
@@ -285,7 +286,7 @@ pub async fn delete_post(
                 EXISTS (SELECT 1 FROM the_post) "deleted!"
         "#,
         slug,
-        jwt_claims.user.id
+        user_id
     )
         .fetch_one(&data.db)
         .await
@@ -319,11 +320,11 @@ pub async fn delete_post(
 }
 
 pub async fn favorite_post(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
         Post,
         r#"
@@ -338,7 +339,7 @@ pub async fn favorite_post(
             SELECT * FROM the_post
         "#,
         slug,
-        user.id
+        user_id
     )
         .fetch_optional(&data.db)
         .await
@@ -362,11 +363,11 @@ pub async fn favorite_post(
 }
 
 pub async fn unfavorite_post(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
         Post,
         r#"
@@ -380,7 +381,7 @@ pub async fn unfavorite_post(
             SELECT * FROM the_post
         "#,
         slug,
-        user.id
+        user_id
     )
         .fetch_optional(&data.db)
         .await

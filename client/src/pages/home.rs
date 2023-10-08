@@ -20,13 +20,7 @@ pub enum Tab {
 #[function_component(MainView)]
 pub fn main_page(props: &Props) -> Html {
     let user_ctx = use_user_context();
-    let tab = use_state(|| {
-        if user_ctx.is_authenticated() {
-            Tab::Feed
-        } else {
-            Tab::All
-        }
-    });
+    let tab = use_state(|| Tab::All);
 
     let filter = use_state(|| {
         if user_ctx.is_authenticated() {

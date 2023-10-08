@@ -8,15 +8,15 @@ use serde_json::{json, Value};
 
 use crate::config::AppState;
 use crate::dtos::profile::ProfileDto;
-use crate::middlewares::auth::JwtClaims;
+use crate::middlewares::auth::AuthUserClaims;
 use crate::models::user::User;
 
 pub async fn get_user_profile(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(display_name): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let profile = sqlx::query_as!(
         ProfileDto,
         r#"
@@ -29,7 +29,7 @@ pub async fn get_user_profile(
             WHERE display_name = $1
         "#,
         display_name,
-        user.id
+        user_id
     )
         .fetch_one(&data.db)
         .await
@@ -53,12 +53,11 @@ pub async fn get_user_profile(
 }
 
 pub async fn follow_user(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(display_name): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = jwt_claims.user;
-
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let followee = sqlx::query_as!(
         User,
         "SELECT * FROM users WHERE display_name = $1",
@@ -78,7 +77,7 @@ pub async fn follow_user(
 
     sqlx::query!(
         "INSERT INTO user_follows(follower_user_id, followee_user_id) VALUES($1, $2) ON CONFLICT DO NOTHING",
-        user.id,
+        user_id,
         followee.id,
     )
         .execute(&data.db)
@@ -108,12 +107,11 @@ pub async fn follow_user(
 }
 
 pub async fn unfollow_user(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(display_name): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = jwt_claims.user;
-
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let followee = sqlx::query_as!(
         User,
         "SELECT * FROM users WHERE display_name = $1",
@@ -133,7 +131,7 @@ pub async fn unfollow_user(
 
     sqlx::query!(
         "DELETE FROM user_follows WHERE follower_user_id = $1 AND followee_user_id = $2",
-        user.id,
+        user_id,
         followee.id,
     )
         .execute(&data.db)

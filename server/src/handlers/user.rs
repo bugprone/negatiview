@@ -15,38 +15,48 @@ use serde_json::{json, Value};
 use crate::config::AppState;
 use crate::dtos::user::*;
 use crate::dtos::Wrapper;
-use crate::middlewares::auth::JwtClaims;
+use crate::middlewares::auth::AuthUserClaims;
 use crate::middlewares::token;
 use crate::middlewares::token::TokenData;
 use crate::models::user::User;
 
 pub async fn me(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = jwt_claims.user;
-    let access_token = find_access_token_in_redis(&data, jwt_claims.access_token_uuid).await?;
+    if let Some(user) = auth_user_claims.user {
+        let access_token_uuid = auth_user_claims.access_token_uuid.unwrap_or_default();
+        let access_token = find_access_token_in_redis(&data, access_token_uuid).await?;
 
-    let json_response = json!({
-        "status": "success",
-        "data": UserDto {
-            email: user.email,
-            display_name: user.display_name,
-            access_token,
-            biography: user.biography.unwrap_or_default(),
-            profile_image_url: user.profile_image_url.unwrap_or_default(),
-        }
-    });
+        let json_response = json!({
+            "status": "success",
+            "data": UserDto {
+                email: user.email,
+                display_name: user.display_name,
+                access_token,
+                biography: user.biography.unwrap_or_default(),
+                profile_image_url: user.profile_image_url.unwrap_or_default(),
+            }
+        });
 
-    Ok(Json(json_response))
+        Ok(Json(json_response))
+    } else {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "status": "fail",
+                "message": "Unauthorized"
+            })),
+        ));
+    }
 }
 
 pub async fn update_me(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Json(body): Json<Wrapper<UserUpdateDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let req = body.data;
 
     let query = match req.password {
@@ -65,7 +75,7 @@ pub async fn update_me(
                 .bind(req.biography)
                 .bind(req.profile_image_url)
                 .bind(hashed_password)
-                .bind(user.id)
+                .bind(user_id)
         }
         None => sqlx::query_as::<_, User>(
             r#"
@@ -79,7 +89,7 @@ pub async fn update_me(
             .bind(req.display_name)
             .bind(req.biography)
             .bind(req.profile_image_url)
-            .bind(user.id),
+            .bind(user_id),
     };
 
     let user = query.fetch_one(&data.db).await.map_err(|err| {
@@ -92,7 +102,11 @@ pub async fn update_me(
         )
     })?;
 
-    let access_token = find_access_token_in_redis(&data, jwt_claims.access_token_uuid).await?;
+    let mut access_token = String::default();
+
+    if let Some(access_token_uuid) = auth_user_claims.access_token_uuid {
+        access_token = find_access_token_in_redis(&data, access_token_uuid).await?
+    }
 
     let json_response = json!({
         "status": "success",

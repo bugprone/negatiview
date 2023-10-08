@@ -18,9 +18,15 @@ use crate::middlewares::token;
 use crate::models::user::User;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct JwtClaims {
-    pub user: User,
-    pub access_token_uuid: Uuid,
+pub struct AuthUserClaims {
+    pub user: Option<User>,
+    pub access_token_uuid: Option<Uuid>,
+}
+
+impl AuthUserClaims {
+    pub fn user_id(&self) -> Option<Uuid> {
+        self.user.as_ref().map(|user| user.id)
+    }
 }
 
 pub async fn auth<B>(
@@ -29,7 +35,7 @@ pub async fn auth<B>(
     mut req: Request<B>,
     next: Next<B>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let access_token = cookie_jar
+    let get_token = cookie_jar
         .get("access_token")
         .map(|cookie| cookie.value().to_string())
         .or_else(|| {
@@ -45,15 +51,15 @@ pub async fn auth<B>(
                 })
         });
 
-    let access_token = access_token.ok_or_else(|| {
-        (
-            StatusCode::UNAUTHORIZED,
-            Json(json!({
-                "status": "fail",
-                "message": "Access token not found. Please login",
-            })),
-        )
-    })?;
+    if get_token.is_none() {
+        req.extensions_mut().insert(AuthUserClaims {
+            user: None,
+            access_token_uuid: None,
+        });
+        return Ok(next.run(req).await)
+    }
+
+    let access_token = get_token.unwrap();
 
     let access_token_data =
         match token::verify_token(data.env.access_token_public_key.to_owned(), &access_token) {
@@ -144,9 +150,9 @@ pub async fn auth<B>(
         )
     })?;
 
-    req.extensions_mut().insert(JwtClaims {
-        user,
-        access_token_uuid,
+    req.extensions_mut().insert(AuthUserClaims {
+        user: Some(user),
+        access_token_uuid: Some(access_token_uuid),
     });
     Ok(next.run(req).await)
 }

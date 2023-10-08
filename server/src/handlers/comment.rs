@@ -10,15 +10,15 @@ use serde_json::{json, Value};
 use crate::config::AppState;
 use crate::dtos::comment::*;
 use crate::dtos::Wrapper;
-use crate::middlewares::auth::JwtClaims;
+use crate::middlewares::auth::AuthUserClaims;
 use crate::models::comment::CommentFromQuery;
 
 pub async fn get_comments(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(slug): Path<String>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
 
     let post_id = sqlx::query_scalar!("SELECT id FROM posts WHERE slug = $1", slug)
         .fetch_one(&data.db)
@@ -50,7 +50,7 @@ pub async fn get_comments(
             WHERE post_id = $2
             ORDER BY created_at
         "#,
-        user.id,
+        user_id,
         post_id,
     )
         .fetch(&data.db)
@@ -80,12 +80,12 @@ pub async fn get_comments(
 }
 
 pub async fn new_comment(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path(slug): Path<String>,
     Json(body): Json<Wrapper<NewCommentDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let comment = sqlx::query_as!(
         CommentFromQuery,
         r#"
@@ -108,7 +108,7 @@ pub async fn new_comment(
             FROM the_comment
             INNER JOIN users AS author ON author.id = $1
         "#,
-        user.id,
+        user_id,
         body.data.body,
         slug,
     )
@@ -134,11 +134,11 @@ pub async fn new_comment(
 }
 
 pub async fn delete_comment(
-    Extension(jwt_claims): Extension<JwtClaims>,
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
     Path((slug, comment_id)): Path<(String, uuid::Uuid)>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
-    let user = &jwt_claims.user;
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let result = sqlx::query!(
         r#"
             WITH the_comment AS (
@@ -161,7 +161,7 @@ pub async fn delete_comment(
         "#,
         comment_id,
         slug,
-        user.id,
+        user_id,
     )
         .fetch_one(&data.db)
         .await
