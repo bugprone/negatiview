@@ -3,6 +3,7 @@ use yew::prelude::*;
 use yew::virtual_dom::VNode;
 use yew_hooks::prelude::*;
 
+use crate::components::comment_list::CommentList;
 use crate::components::post_meta::PostMeta;
 use crate::middlewares::context::use_user_context;
 use crate::services::post::get;
@@ -26,7 +27,7 @@ pub fn post(props: &Props) -> Html {
 
     if let Some(resp) = &post.data {
         let post = &resp.data;
-        let can_modify =
+        let can_edit =
             user_ctx.is_authenticated() && user_ctx.display_name == post.author.display_name;
         let created_at = post.created_at.format("%B %e, %Y").to_string();
 
@@ -38,12 +39,12 @@ pub fn post(props: &Props) -> Html {
                         <PostMeta
                             slug={ post.slug.clone() }
                             author={ post.author.clone() }
-                            can_edit={ can_modify }
+                            can_edit={ can_edit }
                             created_at={ created_at }
                         />
                     </div>
                 </div>
-                <div class="lg:w-4/5 mx-auto py-4 px-4">
+                <div class="lg:w-4/5 mx-auto py-6 px-4">
                     <div class="row">
                         <div class="col-xs-12">
                             { view_body(&post.body) }
@@ -57,6 +58,10 @@ pub fn post(props: &Props) -> Html {
                                 })}
                             </ul>
                         </div>
+                    </div>
+                    <div class="py-6">
+                        <h3 class="text-xl font-bold">{ "Comments" }</h3>
+                        <CommentList slug={ props.slug.clone() } />
                     </div>
                 </div>
             </div>

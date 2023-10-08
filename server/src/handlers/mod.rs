@@ -2,6 +2,7 @@ use axum::Json;
 use axum::response::IntoResponse;
 use serde_json::json;
 
+pub mod comment;
 pub mod user;
 pub mod post;
 pub mod profile;

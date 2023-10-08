@@ -1,5 +1,7 @@
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
+pub mod comment;
 pub mod post;
 pub mod profile;
 pub mod user;
@@ -8,3 +10,5 @@ pub mod user;
 pub struct Wrapper<T> {
     pub data: T,
 }
+
+pub type DeleteWrapper = HashMap<(), ()>;

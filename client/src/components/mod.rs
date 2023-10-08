@@ -1,7 +1,11 @@
 pub mod banner;
+pub mod comment;
+pub mod comment_list;
+pub mod delete_comment;
 pub mod show_error;
 pub mod footer;
 pub mod header;
+pub mod new_comment;
 pub mod pagination;
 pub mod post_action;
 pub mod post_list;

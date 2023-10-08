@@ -4,6 +4,7 @@ use std::sync::Arc;
 use axum::{http::StatusCode, middleware, Router, routing::get, routing::post};
 use axum::body::{Body, boxed};
 use axum::http::Response;
+use axum::routing::delete;
 use tokio::fs;
 use tower::{ServiceBuilder, ServiceExt};
 use tower_http::cors::CorsLayer;
@@ -11,6 +12,7 @@ use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
 use crate::config::{AppState, Opt};
+use crate::handlers::comment::{delete_comment, get_comments, new_comment};
 use crate::handlers::health_check;
 use crate::handlers::post::{delete_post, favorite_post, feed_list, get_post, new_post, post_list, unfavorite_post};
 use crate::handlers::profile::{follow_user, get_user_profile, unfollow_user};
@@ -81,6 +83,17 @@ pub fn create_router(app_state: Arc<AppState>, opt: Opt) -> Router {
                                 .route("/favorite",
                                        post(favorite_post).delete(unfavorite_post)
                                            .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                                )
+                                .nest(
+                                    "/comments",
+                                    Router::new()
+                                        .route("/",
+                                               get(get_comments).post(new_comment))
+                                                .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                                        .route("/:comment_id",
+                                               delete(delete_comment)
+                                               .route_layer(middleware::from_fn_with_state(app_state.clone(), auth))
+                                        )
                                 )
                         )
                 )

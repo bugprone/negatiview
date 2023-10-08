@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::config::AppState;
-use crate::dtos::post::{NewPostDto, PostDto, PostsDto};
+use crate::dtos::post::*;
 use crate::dtos::Wrapper;
 use crate::middlewares::auth::JwtClaims;
 use crate::models::post::{Post, PostFromQuery};
@@ -122,6 +122,7 @@ pub async fn post_list(
         .fetch(&data.db)
         .map_ok(|post| post.into_post_dto())
         .try_collect()
+        .await
         .map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -130,8 +131,7 @@ pub async fn post_list(
                     "message": format!("Failed to get posts: {err}"),
                 }))
             )
-        })
-        .await?;
+        })?;
 
     let json_response = json!({
         "status": "success",
