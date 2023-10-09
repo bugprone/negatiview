@@ -12,7 +12,7 @@ use crate::config::AppState;
 use crate::dtos::post::*;
 use crate::dtos::Wrapper;
 use crate::middlewares::auth::AuthUserClaims;
-use crate::models::post::{Post, PostFromQuery};
+use crate::models::post::PostFromQuery;
 
 #[derive(Deserialize, Default)]
 pub struct PostQuery {
@@ -326,22 +326,38 @@ pub async fn favorite_post(
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
-        Post,
+        PostFromQuery,
         r#"
             WITH the_post AS (
-                SELECT * FROM posts WHERE slug = $1
+                SELECT * FROM posts WHERE slug = $2
             ),
             favorite AS (
                 INSERT INTO post_favorites (user_id, post_id)
-                SELECT $2, id FROM the_post
+                SELECT $1, id FROM the_post
                 ON CONFLICT DO NOTHING
             )
-            SELECT * FROM the_post
+            SELECT
+                slug,
+                title,
+                description,
+                body,
+                tags,
+                the_post.created_at,
+                the_post.updated_at,
+                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
+                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = the_post.id), 0) "favorites_count!",
+                author.display_name AS author_display_name,
+                author.biography AS author_biography,
+                author.profile_image_url AS author_profile_image_url,
+                EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
+            FROM the_post
+            INNER JOIN users AS author ON author.id = the_post.user_id
+            WHERE slug = $2
         "#,
+        user_id,
         slug,
-        user_id
     )
-        .fetch_optional(&data.db)
+        .fetch_one(&data.db)
         .await
         .map_err(|err| {
             (
@@ -356,7 +372,7 @@ pub async fn favorite_post(
     let json_response = json!({
         "status": "success",
         "message": "Post favorited",
-        "data": post
+        "data": post.into_post_dto()
     });
 
     Ok((StatusCode::CREATED, Json(json_response)))
@@ -369,36 +385,52 @@ pub async fn unfavorite_post(
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
-        Post,
+        PostFromQuery,
         r#"
             WITH the_post AS (
-                SELECT * FROM posts WHERE slug = $1
+                SELECT * FROM posts WHERE slug = $2
             ),
             unfavorite AS (
                 DELETE FROM post_favorites
-                WHERE post_id = (SELECT id FROM the_post) AND user_id = $2
+                WHERE post_id = (SELECT id FROM the_post) AND user_id = $1
             )
-            SELECT * FROM the_post
+            SELECT
+                slug,
+                title,
+                description,
+                body,
+                tags,
+                the_post.created_at,
+                the_post.updated_at,
+                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $1) "favorited!",
+                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = the_post.id), 0) "favorites_count!",
+                author.display_name AS author_display_name,
+                author.biography AS author_biography,
+                author.profile_image_url AS author_profile_image_url,
+                EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
+            FROM the_post
+            INNER JOIN users AS author ON author.id = the_post.user_id
+            WHERE slug = $2
         "#,
+        user_id,
         slug,
-        user_id
     )
-        .fetch_optional(&data.db)
+        .fetch_one(&data.db)
         .await
         .map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 Json(json!({
                     "status": "fail",
-                    "message": format!("Failed to favorite post: {err}"),
+                    "message": format!("Failed to unfavorite post: {err}"),
                 }))
             )
         })?;
 
     let json_response = json!({
         "status": "success",
-        "message": "Post favorited",
-        "data": post
+        "message": "Post unfavorited",
+        "data": post.into_post_dto()
     });
 
     Ok((StatusCode::CREATED, Json(json_response)))

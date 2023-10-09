@@ -31,7 +31,6 @@ pub fn delete_comment(props: &Props) -> Html {
             delete_comment.clone(),
             move |delete_comment| {
                 if let Some(delete_comment) = &delete_comment.data {
-                    log::debug!("delete_comment: {:?}", delete_comment.data);
                     callback.emit(delete_comment.data.clone());
                 }
                 || ()

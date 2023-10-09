@@ -34,7 +34,6 @@ pub fn comment_list(props: &Props) -> Html {
     let callback_deleted = {
         let comment_list = comment_list.clone();
         Callback::from(move |_| {
-            log::debug!("Deleted comment");
             comment_list.run();
         })
     };
