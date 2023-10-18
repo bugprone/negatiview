@@ -10,7 +10,7 @@ use crate::types::Wrapper;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
-    pub slug: String,
+    pub post_id: String,
     pub callback: Callback<CommentDto>,
 }
 
@@ -19,11 +19,11 @@ pub fn new_comment(props: &Props) -> Html {
     let user_ctx = use_user_context();
     let new_comment_dto = use_state(NewCommentDto::default);
     let new_comment = {
-        let slug = props.slug.clone();
+        let post_id = props.post_id.clone();
         let new_comment_dto = new_comment_dto.clone();
         use_async(async move {
             create(
-                slug,
+                post_id,
                 Wrapper::<NewCommentDto> { data: (*new_comment_dto).clone() }
             ).await
         })

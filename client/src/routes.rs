@@ -34,10 +34,10 @@ pub enum AppRoute {
     Settings,
     #[at("/editor")]
     NewPost,
-    #[at("/editor/:slug")]
-    EditPost { slug: String },
-    #[at("/posts/:slug")]
-    Post { slug: String },
+    #[at("/editor/:post_id")]
+    EditPost { post_id: String },
+    #[at("/posts/:post_id")]
+    Post { post_id: String },
     #[at("/profile/:display_name")]
     Profile { display_name: String },
     #[at("/profile/:display_name/favorite")]
@@ -56,11 +56,11 @@ fn switch(route: AppRoute) -> Html {
         AppRoute::Login => html! { <Login /> },
         AppRoute::Settings => html! { <Settings /> },
         AppRoute::NewPost => {
-            let slug:Option<String> = None;
-            html! { <Editor slug={slug}/> }
+            let post_id:Option<String> = None;
+            html! { <Editor post_id={post_id}/> }
         },
-        AppRoute::EditPost { slug } => html! { <Editor slug={slug} /> },
-        AppRoute::Post { slug } => html! { <Post slug={slug} /> },
+        AppRoute::EditPost { post_id } => html! { <Editor post_id={post_id} /> },
+        AppRoute::Post { post_id } => html! { <Post post_id={post_id} /> },
         AppRoute::Profile { display_name } => html! {
             <Profile display_name={display_name} tab={ProfileTab::ByAuthor} />
         },

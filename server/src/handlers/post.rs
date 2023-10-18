@@ -26,13 +26,14 @@ pub struct PostQuery {
 pub async fn get_post(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path(slug): Path<String>,
+    Path(post_id): Path<uuid::Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
         PostFromQuery,
         r#"
             SELECT
+                posts.id,
                 slug,
                 title,
                 description,
@@ -48,10 +49,10 @@ pub async fn get_post(
                 EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
             FROM posts
             INNER JOIN users AS author ON author.id = posts.user_id
-            WHERE slug = $2
+            WHERE posts.id = $2
         "#,
         user_id,
-        slug,
+        post_id,
     )
         .fetch_one(&data.db)
         .await
@@ -84,6 +85,7 @@ pub async fn post_list(
         PostFromQuery,
         r#"
             SELECT
+                posts.id,
                 slug,
                 title,
                 description,
@@ -155,6 +157,7 @@ pub async fn feed_list(
         PostFromQuery,
         r#"
             SELECT
+                posts.id,
                 slug,
                 title,
                 description,
@@ -222,6 +225,7 @@ pub async fn new_post(
                 INSERT INTO posts (user_id, slug, title, description, body, tags)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING
+                    id,
                     slug,
                     title,
                     description,
@@ -269,23 +273,120 @@ pub async fn new_post(
     Ok((StatusCode::CREATED, Json(json_response)))
 }
 
+pub async fn update_post(
+    Extension(auth_user_claims): Extension<AuthUserClaims>,
+    State(data): State<Arc<AppState>>,
+    Path(post_id): Path<uuid::Uuid>,
+    Json(body): Json<Wrapper<UpdatePostDto>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
+    let user_id = &auth_user_claims.user_id().unwrap_or_default();
+
+    let post = sqlx::query!(
+        "SELECT id, user_id FROM posts WHERE id = $1",
+        post_id
+    )
+        .fetch_one(&data.db)
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to get post: {err}"),
+                }))
+            )
+        })?;
+
+    if post.user_id != *user_id {
+        return Err((
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "status": "fail",
+                "message": "You are not allowed to edit this post",
+            }))
+        ))
+    }
+
+    let slug = body.data.title.as_deref().map(slugify);
+
+    let post = sqlx::query_as!(
+        PostFromQuery,
+        r#"
+            WITH the_post AS (
+                UPDATE posts
+                SET
+                    slug = COALESCE($1, slug),
+                    title = COALESCE($2, title),
+                    description = COALESCE($3, description),
+                    body = COALESCE($4, body),
+                    tags = COALESCE($5, tags)
+                WHERE id = $6
+                RETURNING
+                    id,
+                    slug,
+                    title,
+                    description,
+                    body,
+                    tags,
+                    created_at,
+                    updated_at
+            )
+            SELECT
+                the_post.*,
+                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $7) "favorited!",
+                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = the_post.id), 0) "favorites_count!",
+                display_name AS author_display_name,
+                biography AS author_biography,
+                profile_image_url AS author_profile_image_url,
+                FALSE "following_author!"
+            FROM the_post
+            INNER JOIN users ON users.id = $7
+        "#,
+        slug,
+        body.data.title,
+        body.data.description,
+        body.data.body,
+        body.data.tags.as_ref().map(|tags| &tags[..]),
+        post_id,
+        user_id)
+        .fetch_one(&data.db)
+        .await
+        .map_err(|err| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({
+                    "status": "fail",
+                    "message": format!("Failed to update post: {err}"),
+                }))
+            )
+        })?;
+
+    let json_response = json!({
+        "status": "success",
+        "message": "Post updated",
+        "data": post.into_post_dto()
+    });
+
+    Ok((StatusCode::OK, Json(json_response)))
+}
+
 pub async fn delete_post(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path(slug): Path<String>,
+    Path(post_id): Path<uuid::Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let result = sqlx::query!(
         r#"
             WITH the_post AS (
-                DELETE FROM posts WHERE slug = $1 AND user_id = $2
+                DELETE FROM posts WHERE posts.id = $1 AND user_id = $2
                 RETURNING 1
             )
             SELECT
-                EXISTS (SELECT 1 FROM posts WHERE slug = $1) "existed!",
+                EXISTS (SELECT 1 FROM posts WHERE posts.id = $1) "existed!",
                 EXISTS (SELECT 1 FROM the_post) "deleted!"
         "#,
-        slug,
+        post_id,
         user_id
     )
         .fetch_one(&data.db)
@@ -304,7 +405,7 @@ pub async fn delete_post(
         Ok((StatusCode::OK, Json(json!({
             "status": "success",
             "message": "Post deleted",
-            "data": slug
+            "data": post_id
         }))))
     } else if result.existed {
         Err((StatusCode::FORBIDDEN, Json(json!({
@@ -322,14 +423,14 @@ pub async fn delete_post(
 pub async fn favorite_post(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path(slug): Path<String>,
+    Path(post_id): Path<uuid::Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
         PostFromQuery,
         r#"
             WITH the_post AS (
-                SELECT * FROM posts WHERE slug = $2
+                SELECT * FROM posts WHERE id = $2
             ),
             favorite AS (
                 INSERT INTO post_favorites (user_id, post_id)
@@ -337,6 +438,7 @@ pub async fn favorite_post(
                 ON CONFLICT DO NOTHING
             )
             SELECT
+                the_post.id,
                 slug,
                 title,
                 description,
@@ -352,10 +454,10 @@ pub async fn favorite_post(
                 EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
             FROM the_post
             INNER JOIN users AS author ON author.id = the_post.user_id
-            WHERE slug = $2
+            WHERE the_post.id = $2
         "#,
         user_id,
-        slug,
+        post_id,
     )
         .fetch_one(&data.db)
         .await
@@ -381,20 +483,21 @@ pub async fn favorite_post(
 pub async fn unfavorite_post(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path(slug): Path<String>,
+    Path(post_id): Path<uuid::Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let post = sqlx::query_as!(
         PostFromQuery,
         r#"
             WITH the_post AS (
-                SELECT * FROM posts WHERE slug = $2
+                SELECT * FROM posts WHERE id = $2
             ),
             unfavorite AS (
                 DELETE FROM post_favorites
                 WHERE post_id = (SELECT id FROM the_post) AND user_id = $1
             )
             SELECT
+                the_post.id,
                 slug,
                 title,
                 description,
@@ -410,10 +513,10 @@ pub async fn unfavorite_post(
                 EXISTS (SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) "following_author!"
             FROM the_post
             INNER JOIN users AS author ON author.id = the_post.user_id
-            WHERE slug = $2
+            WHERE the_post.id = $2
         "#,
         user_id,
-        slug,
+        post_id,
     )
         .fetch_one(&data.db)
         .await

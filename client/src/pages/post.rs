@@ -10,13 +10,13 @@ use crate::services::post::get;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
-    pub slug: String,
+    pub post_id: String,
 }
 
 #[function_component(Post)]
 pub fn post(props: &Props) -> Html {
     let post = {
-        let slug = props.slug.clone();
+        let slug = props.post_id.clone();
         use_async_with_options(
             async move { get(slug).await },
             UseAsyncOptions::enable_auto(),
@@ -37,7 +37,7 @@ pub fn post(props: &Props) -> Html {
                     <div class="lg:w-4/5 mx-auto">
                         <h1 class="px-4 mb-4 text-3xl font-bold">{&post.title}</h1>
                         <PostMeta
-                            slug={ post.slug.clone() }
+                            post_id={ post.id.clone() }
                             author={ post.author.clone() }
                             can_edit={ can_edit }
                             created_at={ created_at }
@@ -61,7 +61,7 @@ pub fn post(props: &Props) -> Html {
                     </div>
                     <div class="py-6">
                         <h3 class="text-xl font-bold">{ "Comments" }</h3>
-                        <CommentList slug={ props.slug.clone() } />
+                        <CommentList post_id={ props.post_id.clone() } />
                     </div>
                 </div>
             </div>

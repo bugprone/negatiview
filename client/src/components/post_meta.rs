@@ -7,7 +7,7 @@ use crate::types::profile::ProfileDto;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
-    pub slug: String,
+    pub post_id: String,
     pub can_edit: bool,
     pub author: ProfileDto,
     pub created_at: String,
@@ -31,7 +31,7 @@ pub fn post_meta(props: &Props) -> Html {
                 </div>
             </div>
 
-            <PostAction slug={props.slug.clone()} can_edit={props.can_edit} />
+            <PostAction post_id={props.post_id.clone()} can_edit={props.can_edit} />
         </div>
     }
 }

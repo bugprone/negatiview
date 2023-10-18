@@ -24,16 +24,16 @@ pub async fn favorited_by(author: String, page: usize) -> Result<Wrapper<PostsDt
     request_get::<Wrapper<PostsDto>>(format!("/posts?favorited={}&{}", author, limit(10, page))).await
 }
 
-pub async fn favorite(slug: String) -> Result<Wrapper<PostDto>, Error> {
-    request_post::<(), Wrapper<PostDto>>(format!("/posts/{}/favorite", slug), ()).await
+pub async fn favorite(post_id: String) -> Result<Wrapper<PostDto>, Error> {
+    request_post::<(), Wrapper<PostDto>>(format!("/posts/{}/favorite", post_id), ()).await
 }
 
-pub async fn unfavorite(slug: String) -> Result<Wrapper<PostDto>, Error> {
-    request_delete::<Wrapper<PostDto>>(format!("/posts/{}/favorite", slug)).await
+pub async fn unfavorite(post_id: String) -> Result<Wrapper<PostDto>, Error> {
+    request_delete::<Wrapper<PostDto>>(format!("/posts/{}/favorite", post_id)).await
 }
 
-pub async fn get(slug: String) -> Result<Wrapper<PostDto>, Error> {
-    request_get::<Wrapper<PostDto>>(format!("/posts/{}", slug)).await
+pub async fn get(post_id: String) -> Result<Wrapper<PostDto>, Error> {
+    request_get::<Wrapper<PostDto>>(format!("/posts/{}", post_id)).await
 }
 
 pub async fn create(post: Wrapper<PostUpdateDto>) -> Result<Wrapper<PostDto>, Error> {
@@ -44,14 +44,14 @@ pub async fn create(post: Wrapper<PostUpdateDto>) -> Result<Wrapper<PostDto>, Er
         .await
 }
 
-pub async fn update(slug: String, post: Wrapper<PostUpdateDto>) -> Result<Wrapper<PostDto>, Error> {
+pub async fn update(post_id: String, post: Wrapper<PostUpdateDto>) -> Result<Wrapper<PostDto>, Error> {
     request_put::<Wrapper<PostUpdateDto>, Wrapper<PostDto>>(
-        format!("/posts/{}", slug),
+        format!("/posts/{}", post_id),
         post,
     )
         .await
 }
 
-pub async fn del(slug: String) -> Result<Wrapper<String>, Error> {
-    request_delete::<Wrapper<String>>(format!("/posts/{}", slug)).await
+pub async fn del(post_id: String) -> Result<Wrapper<String>, Error> {
+    request_delete::<Wrapper<String>>(format!("/posts/{}", post_id)).await
 }

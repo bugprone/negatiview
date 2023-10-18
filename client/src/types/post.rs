@@ -5,6 +5,7 @@ use crate::types::profile::ProfileDto;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 pub struct PostDto {
+    pub id: String,
     pub slug: String,
     pub title: String,
     pub description: String,

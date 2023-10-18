@@ -16,11 +16,11 @@ use crate::models::comment::CommentFromQuery;
 pub async fn get_comments(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path(slug): Path<String>,
+    Path(post_id): Path<uuid::Uuid>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
 
-    let post_id = sqlx::query_scalar!("SELECT id FROM posts WHERE slug = $1", slug)
+    let post_id = sqlx::query_scalar!("SELECT id FROM posts WHERE id = $1", post_id)
         .fetch_one(&data.db)
         .await
         .map_err(|err| {
@@ -82,7 +82,7 @@ pub async fn get_comments(
 pub async fn new_comment(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path(slug): Path<String>,
+    Path(post_id): Path<uuid::Uuid>,
     Json(body): Json<Wrapper<NewCommentDto>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
@@ -93,7 +93,7 @@ pub async fn new_comment(
                 INSERT INTO comments (post_id, user_id, body)
                 SELECT id, $1, $2
                 FROM posts
-                WHERE slug = $3
+                WHERE posts.id = $3
                 RETURNING id, body, created_at, updated_at
             )
             SELECT
@@ -110,7 +110,7 @@ pub async fn new_comment(
         "#,
         user_id,
         body.data.body,
-        slug,
+        post_id,
     )
         .fetch_one(&data.db)
         .await
@@ -136,7 +136,7 @@ pub async fn new_comment(
 pub async fn delete_comment(
     Extension(auth_user_claims): Extension<AuthUserClaims>,
     State(data): State<Arc<AppState>>,
-    Path((slug, comment_id)): Path<(String, uuid::Uuid)>,
+    Path((post_id, comment_id)): Path<(uuid::Uuid, uuid::Uuid)>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let result = sqlx::query!(
@@ -145,7 +145,7 @@ pub async fn delete_comment(
                 DELETE FROM comments
                 WHERE
                     id = $1 AND
-                    post_id IN (SELECT id FROM posts WHERE slug = $2) AND
+                    post_id IN (SELECT id FROM posts WHERE id = $2) AND
                     user_id = $3
                 RETURNING 1
             )
@@ -153,14 +153,14 @@ pub async fn delete_comment(
                 EXISTS (
                     SELECT 1 FROM comments
                     INNER JOIN posts ON posts.id = comments.post_id
-                    WHERE comments.id = $1 AND posts.slug = $2
+                    WHERE comments.id = $1 AND posts.id = $2
                 ) "existed!",
                 EXISTS (
                     SELECT 1 FROM the_comment
                 ) "deleted!"
         "#,
         comment_id,
-        slug,
+        post_id,
         user_id,
     )
         .fetch_one(&data.db)

@@ -11,7 +11,7 @@ use crate::types::Wrapper;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
-    pub slug: Option<String>,
+    pub post_id: Option<String>,
 }
 
 #[function_component(Editor)]
@@ -22,11 +22,11 @@ pub fn editor(props: &Props) -> Html {
     let tag_input = use_state(String::default);
 
     let post_get = {
-        let slug = props.slug.clone();
+        let slug = props.post_id.clone();
         use_async(async move { get(slug.unwrap_or_default()).await })
     };
     let post_update = {
-        let slug = props.slug.clone();
+        let slug = props.post_id.clone();
         let update_dto = update_dto.clone();
         use_async(async move {
             let req = Wrapper::<PostUpdateDto> {
@@ -43,7 +43,7 @@ pub fn editor(props: &Props) -> Html {
     {
         let post_get = post_get.clone();
         use_effect_with(
-            props.slug.clone(),
+            props.post_id.clone(),
             move |slug| {
                 if slug.is_some() {
                     post_get.run();
@@ -85,7 +85,7 @@ pub fn editor(props: &Props) -> Html {
                 if let Some(resp) = &post_update.data {
                     error.set(None);
                     navigator.push(&AppRoute::Post {
-                        slug: resp.data.slug.clone(),
+                        post_id: resp.data.id.clone(),
                     });
                 }
                 if let Some(err) = &post_update.error {

@@ -18,6 +18,7 @@ pub struct Post {
 }
 
 pub struct PostFromQuery {
+    pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
     pub description: String,
@@ -36,6 +37,7 @@ pub struct PostFromQuery {
 impl PostFromQuery {
     pub fn into_post_dto(self) -> PostDto {
         PostDto {
+            id: self.id,
             slug: self.slug,
             title: self.title,
             description: self.description,

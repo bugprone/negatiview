@@ -37,7 +37,7 @@ pub fn comment(props: &Props) -> Html {
                 { if can_delete {
                     html! {
                         <DeleteComment
-                            slug={props.slug.clone()}
+                            post_id={props.slug.clone()}
                             comment_id={comment.id.clone()}
                             callback={props.callback.clone()}
                             />

@@ -20,6 +20,7 @@ pub struct UpdatePostDto {
 
 #[derive(Serialize, Deserialize)]
 pub struct PostDto {
+    pub id: uuid::Uuid,
     pub slug: String,
     pub title: String,
     pub description: String,

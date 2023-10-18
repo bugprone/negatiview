@@ -5,7 +5,7 @@ use crate::services::comment::delete;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
-    pub slug: String,
+    pub post_id: String,
     pub comment_id: String,
     pub callback: Callback<String>,
 }
@@ -13,9 +13,9 @@ pub struct Props {
 #[function_component(DeleteComment)]
 pub fn delete_comment(props: &Props) -> Html {
     let delete_comment = {
-        let slug = props.slug.clone();
+        let post_id = props.post_id.clone();
         let comment_id = props.comment_id.clone();
-        use_async(async move { delete(slug, comment_id).await })
+        use_async(async move { delete(post_id, comment_id).await })
     };
 
     let onclick = {

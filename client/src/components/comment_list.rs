@@ -10,16 +10,16 @@ use crate::services::comment::get;
 
 #[derive(Properties, Clone, PartialEq, Eq)]
 pub struct Props {
-    pub slug: String,
+    pub post_id: String,
 }
 
 #[function_component(CommentList)]
 pub fn comment_list(props: &Props) -> Html {
     let user_ctx = use_user_context();
     let comment_list = {
-        let slug = props.slug.clone();
+        let post_id = props.post_id.clone();
         use_async_with_options(
-            async move { get(slug).await },
+            async move { get(post_id).await },
             UseAsyncOptions::enable_auto(),
         )
     };
@@ -45,7 +45,7 @@ pub fn comment_list(props: &Props) -> Html {
                     {for comment_list.data.comments.iter().map(|comment_dto| {
                         html! {
                             <Comment
-                                slug={props.slug.clone()}
+                                slug={props.post_id.clone()}
                                 comment={comment_dto.clone()}
                                 callback={callback_deleted.clone()} />
                         }
@@ -56,7 +56,7 @@ pub fn comment_list(props: &Props) -> Html {
                         html! {
                             <div>
                                 <NewComment
-                                    slug={props.slug.clone()}
+                                    post_id={props.post_id.clone()}
                                     callback={callback_added} />
                             </div>
                         }
