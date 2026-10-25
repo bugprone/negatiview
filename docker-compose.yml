@@ -1,43 +1,20 @@
-version: "3"
 services:
-  # negatiview:
-  #   container_name: rust
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "3000:3000"
-  #   env_file:
-  #     - ./.env
-  #   depends_on:
-  #     - postgres
-  #     - redis
   postgres:
-    image: postgres:latest
-    container_name: postgres
+    image: postgres:17
+    container_name: negatiview-postgres
     ports:
       - "5432:5432"
     env_file:
       - ./.env
     volumes:
-      - db:/var/lib/postgresql
+      - postgres-data:/var/lib/postgresql/data
   redis:
-    image: redis:latest
-    container_name: redis
+    image: redis:7
+    container_name: negatiview-redis
     ports:
       - "6379:6379"
-    env_file:
-      - ./.env
     volumes:
-      - db:/var/lib/redis
-  kafka:
-    image: docker.io/bitnami/kafka:latest
-    container_name: kafka
-    ports:
-      - "9092:9092"
-    env_file:
-      - ./.env
-    volumes:
-      - db:/var/lib/kafka
+      - redis-data:/data
 volumes:
-  db: {}
+  postgres-data: {}
+  redis-data: {}
