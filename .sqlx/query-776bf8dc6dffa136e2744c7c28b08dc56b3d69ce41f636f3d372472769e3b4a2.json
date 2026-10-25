@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT display_name, biography, profile_image_url,\n            EXISTS (\n                SELECT 1 FROM user_follows\n                WHERE followee_user_id = users.id AND follower_user_id = $2\n            ) \"following!\"\n            FROM users\n            WHERE display_name = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "profile_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "following!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "776bf8dc6dffa136e2744c7c28b08dc56b3d69ce41f636f3d372472769e3b4a2"
+}

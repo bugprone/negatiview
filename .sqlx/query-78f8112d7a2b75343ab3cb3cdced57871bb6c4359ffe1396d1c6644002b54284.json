@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO user_follows(follower_user_id, followee_user_id) VALUES($1, $2) ON CONFLICT DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "78f8112d7a2b75343ab3cb3cdced57871bb6c4359ffe1396d1c6644002b54284"
+}

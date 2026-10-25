@@ -1,0 +1,105 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                posts.id,\n                slug,\n                title,\n                description,\n                body,\n                tags,\n                posts.created_at,\n                posts.updated_at,\n                EXISTS (SELECT 1 FROM post_favorites WHERE post_id = posts.id AND user_id = $1) \"favorited!\",\n                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = posts.id), 0) \"favorites_count!\",\n                author.display_name AS author_display_name,\n                author.biography AS author_biography,\n                author.profile_image_url AS author_profile_image_url,\n                EXISTS ( SELECT 1 FROM user_follows WHERE followee_user_id = author.id AND follower_user_id = $1) \"following_author!\"\n            FROM posts\n            INNER JOIN users AS author ON author.id = posts.user_id\n            WHERE ( $2::TEXT IS NULL OR tags @> array[$2] )\n                AND ( $3::TEXT IS NULL OR author.display_name = $3 )\n                AND (\n                    $4::TEXT IS NULL OR EXISTS (\n                        SELECT 1 FROM users\n                        INNER JOIN post_favorites ON users.id = post_favorites.user_id\n                        WHERE display_name = $4 AND posts.id = post_favorites.post_id\n                    )\n                )\n            ORDER BY posts.created_at DESC\n            LIMIT $5\n            OFFSET $6\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "favorited!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "favorites_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "author_display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "author_biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "author_profile_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "following_author!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Int8",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "cb4d9362372f8cf783b144bdcdf7f0c397b7d322df37d4b9ca96744753eb8e62"
+}

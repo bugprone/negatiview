@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH the_post AS (\n                DELETE FROM posts WHERE posts.id = $1 AND user_id = $2\n                RETURNING 1\n            )\n            SELECT\n                EXISTS (SELECT 1 FROM posts WHERE posts.id = $1) \"existed!\",\n                EXISTS (SELECT 1 FROM the_post) \"deleted!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "existed!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "deleted!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "9c1eac2e2b5da84a9087c403a172dbe4d4b7cd1a61617f12b9cdf11165dbdb0c"
+}

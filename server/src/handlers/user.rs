@@ -344,7 +344,7 @@ async fn save_access_token_to_redis(
     let mut redis_client = get_redis_client(data).await?;
 
     redis_client
-        .set_ex(
+        .set_ex::<_, _, ()>(
             token_data.token_uuid.to_string(),
             token_data.access_token.as_ref(),
             (max_age * 60) as usize,

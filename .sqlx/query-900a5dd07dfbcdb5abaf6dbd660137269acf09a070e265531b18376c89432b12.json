@@ -1,0 +1,105 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH the_post AS (\n                INSERT INTO posts (user_id, slug, title, description, body, tags)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                RETURNING\n                    id,\n                    slug,\n                    title,\n                    description,\n                    body,\n                    tags,\n                    created_at,\n                    updated_at\n            )\n            SELECT\n                the_post.*,\n                FALSE \"favorited!\",\n                0::INT \"favorites_count!\",\n                display_name AS author_display_name,\n                biography AS author_biography,\n                profile_image_url AS author_profile_image_url,\n                FALSE \"following_author!\"\n            FROM the_post\n            INNER JOIN users ON users.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "favorited!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "favorites_count!",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 10,
+        "name": "author_display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "author_biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "author_profile_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "following_author!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "TextArray"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "900a5dd07dfbcdb5abaf6dbd660137269acf09a070e265531b18376c89432b12"
+}

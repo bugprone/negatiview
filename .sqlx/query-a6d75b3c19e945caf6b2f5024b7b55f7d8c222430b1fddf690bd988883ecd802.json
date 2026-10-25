@@ -1,0 +1,66 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH the_comment AS (\n                INSERT INTO comments (post_id, user_id, body)\n                SELECT id, $1, $2\n                FROM posts\n                WHERE posts.id = $3\n                RETURNING id, body, created_at, updated_at\n            )\n            SELECT\n                the_comment.id,\n                body,\n                the_comment.created_at,\n                the_comment.updated_at,\n                author.display_name AS author_display_name,\n                author.biography AS author_biography,\n                author.profile_image_url AS author_profile_image_url,\n                FALSE \"following_author!\"\n            FROM the_comment\n            INNER JOIN users AS author ON author.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 3,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "author_display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "author_biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "author_profile_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "following_author!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "a6d75b3c19e945caf6b2f5024b7b55f7d8c222430b1fddf690bd988883ecd802"
+}

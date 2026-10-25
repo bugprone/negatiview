@@ -1,0 +1,106 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            WITH the_post AS (\n                UPDATE posts\n                SET\n                    slug = COALESCE($1, slug),\n                    title = COALESCE($2, title),\n                    description = COALESCE($3, description),\n                    body = COALESCE($4, body),\n                    tags = COALESCE($5, tags)\n                WHERE id = $6\n                RETURNING\n                    id,\n                    slug,\n                    title,\n                    description,\n                    body,\n                    tags,\n                    created_at,\n                    updated_at\n            )\n            SELECT\n                the_post.*,\n                EXISTS (SELECT 1 FROM post_favorites WHERE user_id = $7) \"favorited!\",\n                COALESCE ( (SELECT COUNT(*) FROM post_favorites WHERE post_id = the_post.id), 0) \"favorites_count!\",\n                display_name AS author_display_name,\n                biography AS author_biography,\n                profile_image_url AS author_profile_image_url,\n                FALSE \"following_author!\"\n            FROM the_post\n            INNER JOIN users ON users.id = $7\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "title",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "favorited!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "favorites_count!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "author_display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "author_biography",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "author_profile_image_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 13,
+        "name": "following_author!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "TextArray",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      null,
+      null,
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "91c29e739d294f609a0a6ed02285fc31ab68d8b2cad7d6318d74a8485170d9d0"
+}

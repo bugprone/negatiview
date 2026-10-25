@@ -4,9 +4,6 @@
 # Ignore dist diectory (compiled code)
 /dist
 
-# Ignore Cargo.lock file (dependency lock file)
-Cargo.lock
-
 # Ignore .env file (environment configuration, if used)
 .env
 
