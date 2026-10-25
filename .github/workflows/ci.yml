@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  SQLX_OFFLINE: "true"
+
+jobs:
+  server:
+    name: server (axum)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p server
+      - run: cargo clippy -p server -- -D warnings
+      - run: cargo test -p server
+
+  client:
+    name: client (yew / wasm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: trunk
+      - run: npm ci
+        working-directory: client
+      - run: cargo clippy -p client --target wasm32-unknown-unknown -- -D warnings
+      - run: trunk build --release
+        working-directory: client

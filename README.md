@@ -1,5 +1,7 @@
 # Negatiview
 
+[![CI](https://github.com/bugprone/negatiview/actions/workflows/ci.yml/badge.svg)](https://github.com/bugprone/negatiview/actions/workflows/ci.yml)
+
 *Why you shouldn't purchase this product.*
 
 Negatiview is a [RealWorld](https://github.com/gothinkster/realworld)-style
@@ -25,9 +27,9 @@ client is Yew compiled to WebAssembly and styled with Tailwind.
 
 | Layer | Crates |
 |---|---|
-| Server | `axum`, `tower-http`, `sqlx` (PostgreSQL), `redis`, `jsonwebtoken`, `argon2`, `tokio` |
-| Client | `yew`, `yew-router`, `yew-hooks`, `gloo-net`, `pulldown-cmark`, Tailwind CSS |
-| Tooling | `trunk` (wasm bundler), `sqlx-cli` (migrations, offline query cache), Docker Compose |
+| Server | `axum` 0.8, `tower-http`, `sqlx` 0.9 (PostgreSQL), `redis` 1.x, `jsonwebtoken` 11, `argon2`, `tokio` |
+| Client | `yew` 0.23, `yew-router`, `yew-hooks`, `gloo-net`, `pulldown-cmark`, Tailwind CSS v4 |
+| Tooling | Rust 2024 edition (MSRV 1.94), `trunk` (wasm bundler), `sqlx-cli` 0.9 (migrations, offline query cache), Docker Compose |
 
 ![Database schema](https://github.com/bugprone/negatiview/assets/17267089/bf708310-bee5-4fbb-b223-e91726f1d4e9)
 
@@ -53,12 +55,13 @@ All routes live under `/api`. Routes marked 🔒 need a valid access token.
 
 ## Getting started
 
-Prerequisites: Rust stable, the `wasm32-unknown-unknown` target, `trunk`,
-`sqlx-cli`, Node (for the Tailwind v3 CLI) and Docker.
+Prerequisites: Rust 1.94+, the `wasm32-unknown-unknown` target, `trunk`,
+`sqlx-cli`, Node 20+ (for the Tailwind v4 CLI) and Docker.
 
 ```bash
 rustup target add wasm32-unknown-unknown
 cargo install trunk sqlx-cli
+(cd client && npm install)   # Tailwind CLI, used by Trunk's pre-build hook
 ```
 
 1. **Configure.** Copy `.env.example` to `.env` and generate two RSA key pairs,
@@ -81,15 +84,10 @@ cargo install trunk sqlx-cli
    sqlx migrate run
    ```
 
-3. **Build the stylesheet** once (and again whenever you change classes):
-
-   ```bash
-   cd client && npx tailwindcss@3 -o ./tailwind.css && cd ..
-   ```
-
-4. **Run** both halves with hot reload. `dev.sh` starts `trunk serve` on
+3. **Run** both halves with hot reload. `dev.sh` starts `trunk serve` on
    http://localhost:8080 and proxies `/api` to the Axum server on port 8081
-   (needs `cargo install cargo-watch`):
+   (needs `cargo install cargo-watch`). Trunk's pre-build hook runs
+   `npm run css` to regenerate `tailwind.css` from `client/input.css`:
 
    ```bash
    ./dev.sh
@@ -122,6 +120,8 @@ cargo sqlx prepare --workspace
 
 ```
 client/           Yew application (pages, components, API services, types)
+client/input.css  Tailwind v4 entry (plus v3-compat base styles); built by `npm run css`
+client/package.json  Tailwind CLI only; Rust is built by trunk
 server/
   src/handlers/   Axum handlers per resource (user, profile, post, comment, tag)
   src/middlewares/auth.rs   JWT verification + Redis token lookup
