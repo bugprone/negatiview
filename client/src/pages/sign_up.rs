@@ -79,7 +79,7 @@ pub fn sign_up_page() -> Html {
                         { "Email" }
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="email"
                         value={ sign_up_dto.email.clone() }
                         oninput={ oninput_email }
@@ -90,7 +90,7 @@ pub fn sign_up_page() -> Html {
                         { "Password" }
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="password"
                         value={ sign_up_dto.password.clone() }
                         oninput={ oninput_password }
@@ -101,14 +101,14 @@ pub fn sign_up_page() -> Html {
                         { "Display Name" }
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="text"
                         value={ sign_up_dto.display_name.clone() }
                         oninput={ oninput_display_name }
                     />
                 </div>
                 <div class="flex justify-center">
-                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-700 focus:outline-none">
+                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring-3 focus:ring-indigo-700 focus:outline-hidden">
                         { "Sign Up" }
                     </button>
                 </div>

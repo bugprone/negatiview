@@ -1,0 +1,12 @@
+{
+  "name": "negatiview-client",
+  "private": true,
+  "description": "Tailwind CSS toolchain for the Yew client; the Rust build is driven by trunk.",
+  "scripts": {
+    "css": "tailwindcss -i ./input.css -o ./tailwind.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4",
+    "tailwindcss": "^4"
+  }
+}

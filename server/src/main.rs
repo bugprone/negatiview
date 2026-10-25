@@ -5,28 +5,25 @@ use std::{
 };
 
 use clap::Parser;
-use dotenv::dotenv;
 use redis::Client;
 use sqlx::postgres::PgPoolOptions;
+use tracing_subscriber::EnvFilter;
 
 use server::config::{AppState, Config, Opt};
 use server::routes::create_router;
 
 #[tokio::main]
 async fn main() {
-    dotenv().ok();
+    dotenvy::dotenv().ok();
 
     let config = Config::init();
     let opt = Opt::parse();
 
-    if std::env::var("RUST_LOG").is_err() {
-        std::env::set_var(
-            "RUST_LOG",
-            format!("{}, hyper=info, mio=info", opt.log_level),
-        )
-    }
-
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt()
+        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+            EnvFilter::new(format!("{},hyper=info,mio=info", opt.log_level))
+        }))
+        .init();
 
     let pool = match PgPoolOptions::new()
         .max_connections(10)
@@ -56,13 +53,13 @@ async fn main() {
         opt,
     );
 
-    log::info!(
-        "🚀 negatiview server started successfully on http://{:?}",
-        socket_addr
-    );
+    let listener = tokio::net::TcpListener::bind(socket_addr)
+        .await
+        .unwrap_or_else(|err| panic!("Unable to bind {socket_addr}: {err}"));
 
-    axum::Server::bind(&socket_addr)
-        .serve(app.into_make_service())
+    tracing::info!("negatiview server listening on http://{socket_addr}");
+
+    axum::serve(listener, app)
         .await
         .expect("Unable to start server")
 }

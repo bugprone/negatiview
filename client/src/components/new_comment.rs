@@ -81,16 +81,15 @@ pub fn new_comment(props: &Props) -> Html {
                     }
                 }
             </div>
-            <div class="flex-grow ml-2">
+            <div class="grow ml-2">
                 <ShowError error={new_comment.error.clone()} />
                 <form onsubmit={onsubmit} class="relative">
                     <textarea
-                        class="w-full p-3 border rounded-md resize-none focus:outline-none focus:border-indigo-500"
+                        class="w-full p-3 border rounded-md resize-none focus:outline-hidden focus:border-indigo-500"
                         rows="3"
                         placeholder="Write a comment..."
                         value={new_comment_dto.body.clone()}
-                        oninput={oninput} >
-                    </textarea>
+                        oninput={oninput} />
                     <button class="p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 absolute right-2 bottom-2" type="submit" disabled={button_disabled}>
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />

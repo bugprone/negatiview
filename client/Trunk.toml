@@ -2,5 +2,11 @@
 dist = "../dist"
 target = "index.html"
 
+# Regenerate tailwind.css from input.css before every build (needs `npm install` once).
+[[hooks]]
+stage = "pre_build"
+command = "npm"
+command_arguments = ["run", "--silent", "css"]
+
 [[proxy]]
 backend = "http://[::1]:8081/api/"

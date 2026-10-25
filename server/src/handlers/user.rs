@@ -1,14 +1,12 @@
 use std::sync::Arc;
 
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
-use argon2::password_hash::SaltString;
 use axum::{Extension, Json};
 use axum::extract::State;
-use axum::http::{HeaderMap, Response, StatusCode};
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::IntoResponse;
 use axum_extra::extract::cookie::{Cookie, SameSite};
-use rand_core::OsRng;
-use redis::aio::Connection;
+use redis::aio::MultiplexedConnection;
 use redis::AsyncCommands;
 use serde_json::{json, Value};
 
@@ -41,13 +39,13 @@ pub async fn me(
 
         Ok(Json(json_response))
     } else {
-        return Err((
+        Err((
             StatusCode::UNAUTHORIZED,
             Json(json!({
                 "status": "fail",
                 "message": "Unauthorized"
             })),
-        ));
+        ))
     }
 }
 
@@ -177,14 +175,7 @@ pub async fn sign_up(
         }
     });
 
-    let mut response = Response::builder()
-        .status(StatusCode::OK)
-        .body(json_response.to_string())
-        .unwrap();
-
-    response.headers_mut().extend(headers);
-
-    Ok(response)
+    Ok((headers, Json(json_response)))
 }
 
 fn set_cookies(
@@ -192,32 +183,32 @@ fn set_cookies(
     access_token_data: &TokenData,
     refresh_token_data: &TokenData,
 ) -> HeaderMap {
-    let access_cookie = Cookie::build(
+    let access_cookie = Cookie::build((
         "access_token",
         access_token_data.access_token.clone().unwrap_or_default(),
-    )
+    ))
         .path("/")
         .max_age(time::Duration::minutes(data.env.access_token_max_age * 60))
         .same_site(SameSite::Lax)
         .http_only(true)
-        .finish();
+        .build();
 
-    let refresh_cookie = Cookie::build(
+    let refresh_cookie = Cookie::build((
         "refresh_token",
         refresh_token_data.access_token.clone().unwrap_or_default(),
-    )
+    ))
         .path("/")
         .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
         .same_site(SameSite::Lax)
         .http_only(true)
-        .finish();
+        .build();
 
-    let logged_in_cookie = Cookie::build("logged_in", "true")
+    let logged_in_cookie = Cookie::build(("logged_in", "true"))
         .path("/")
         .max_age(time::Duration::minutes(data.env.refresh_token_max_age * 60))
         .same_site(SameSite::Lax)
         .http_only(false)
-        .finish();
+        .build();
 
     let mut headers = HeaderMap::new();
     headers.append("Set-Cookie", access_cookie.to_string().parse().unwrap());
@@ -227,9 +218,8 @@ fn set_cookies(
 }
 
 fn get_hashed_password(password: &str) -> Result<String, (StatusCode, Json<Value>)> {
-    let salt = SaltString::generate(&mut OsRng);
     let hashed_password = Argon2::default()
-        .hash_password(password.as_bytes(), &salt)
+        .hash_password(password.as_bytes())
         .map_err(|err| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -269,7 +259,7 @@ pub async fn login(
     let is_valid = match PasswordHash::new(&user.password) {
         Ok(parsed_hash) => Argon2::default()
             .verify_password(req.password.as_bytes(), &parsed_hash)
-            .map_or(false, |_| true),
+            .is_ok_and(|_| true),
         Err(_) => false,
     };
 
@@ -310,14 +300,7 @@ pub async fn login(
         }
     });
 
-    let mut response = Response::builder()
-        .status(StatusCode::OK)
-        .body(json_response.to_string())
-        .unwrap();
-
-    response.headers_mut().extend(headers);
-
-    Ok(response)
+    Ok((headers, Json(json_response)))
 }
 
 fn issue_access_token(
@@ -346,8 +329,8 @@ async fn save_access_token_to_redis(
     redis_client
         .set_ex::<_, _, ()>(
             token_data.token_uuid.to_string(),
-            token_data.access_token.as_ref(),
-            (max_age * 60) as usize,
+            token_data.access_token.as_deref().unwrap_or_default(),
+            (max_age * 60) as u64,
         )
         .await
         .map_err(|err| {
@@ -382,10 +365,10 @@ async fn find_access_token_in_redis(
     Ok(access_token)
 }
 
-async fn get_redis_client(data: &Arc<AppState>) -> Result<Connection, (StatusCode, Json<Value>)> {
+async fn get_redis_client(data: &Arc<AppState>) -> Result<MultiplexedConnection, (StatusCode, Json<Value>)> {
     let redis_client = data
         .redis_client
-        .get_async_connection()
+        .get_multiplexed_async_connection()
         .await
         .map_err(|err| {
             (

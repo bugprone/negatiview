@@ -139,7 +139,7 @@ pub fn setting() -> Html {
                         { "Email" }
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="email"
                         placeholder="Email"
                         value={update_dto.email.clone()}
@@ -151,7 +151,7 @@ pub fn setting() -> Html {
                         { "New Password"}
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="password"
                         placeholder="New Password"
                         value={(*password).clone()}
@@ -163,7 +163,7 @@ pub fn setting() -> Html {
                         { "Display Name" }
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="text"
                         placeholder="Display Name"
                         value={update_dto.display_name.clone()}
@@ -175,7 +175,7 @@ pub fn setting() -> Html {
                         { "Profile Image" }
                     </label>
                     <input
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="text"
                         placeholder="URL to Profile Image"
                         value={update_dto.profile_image_url.clone()}
@@ -187,7 +187,7 @@ pub fn setting() -> Html {
                         { "Bio" }
                     </label>
                     <textarea
-                        class="mt-1 p-2 block w-full border rounded-md shadow-sm focus:ring focus:ring-indigo-300 focus:outline-none"
+                        class="mt-1 p-2 block w-full border rounded-md shadow-xs focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="text"
                         placeholder="About Yourself"
                         value={update_dto.biography.clone()}
@@ -195,7 +195,7 @@ pub fn setting() -> Html {
                     />
                 </div>
                 <div class="flex justify-center">
-                    <button class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:outline-none"
+                    <button class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring-3 focus:ring-indigo-300 focus:outline-hidden"
                         type="submit"
                         disabled={user.loading || update.loading}>
                         {"Update"}

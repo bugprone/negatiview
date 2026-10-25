@@ -1,23 +1,17 @@
-use std::sync::RwLock;
+use std::sync::{LazyLock, RwLock};
 
 use gloo::storage::{LocalStorage, Storage};
-use lazy_static::lazy_static;
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::middlewares::error::{Error, ErrorInfo};
 
-const API_ROOT: &str = "http://localhost:8081/api";
+/// Same-origin: `trunk serve` proxies `/api` to the server in development and the
+/// server itself serves the bundle in production.
+const API_ROOT: &str = "/api";
 const TOKEN_KEY: &str = "access_token";
 
-lazy_static! {
-    pub static ref TOKEN: RwLock<Option<String>> = {
-        if let Ok(token) = LocalStorage::get(TOKEN_KEY) {
-            RwLock::new(Some(token))
-        } else {
-            RwLock::new(None)
-        }
-    };
-}
+pub static TOKEN: LazyLock<RwLock<Option<String>>> =
+    LazyLock::new(|| RwLock::new(LocalStorage::get(TOKEN_KEY).ok()));
 
 pub fn get_token() -> Option<String> {
     let token_lock = TOKEN.read();

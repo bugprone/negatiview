@@ -200,8 +200,7 @@ pub fn editor(props: &Props) -> Html {
                             rows="8"
                             placeholder="You can use markdown text here..."
                             value={update_dto.body.clone()}
-                            oninput={oninput_body} >
-                        </textarea>
+                            oninput={oninput_body} />
                     </div>
                     <div class="form-group">
                         <label for="tags" class="block text-sm font-medium text-gray-700">
@@ -218,7 +217,7 @@ pub fn editor(props: &Props) -> Html {
                         <div class="mt-2 flex flex-wrap space-x-2">
                             {
                                 if let Some(tags) = &update_dto.tags.clone() {
-                                    html! {for tags.iter().map(|tag| {
+                                    tags.iter().map(|tag| {
                                         let onclick_remove = {
                                             let tag = tag.clone();
                                             let update_dto = update_dto.clone();
@@ -233,7 +232,7 @@ pub fn editor(props: &Props) -> Html {
                                         html! {
                                             <span class="inline-flex items-center px-2 py-1 text-sm font-medium text-indigo-400 bg-indigo-100 rounded">
                                                 { format!("#{}", &tag) }
-                                                <button type="button" class="inline-flex items-center p-1 ml-1 text-sm text-indigo-400 bg-transparent rounded-sm hover:bg-indigo-200 hover:text-indigo-600" data-dismiss-target="#badge-dismiss-indigo" aria-label="Remove" onclick={onclick_remove}>
+                                                <button type="button" class="inline-flex items-center p-1 ml-1 text-sm text-indigo-400 bg-transparent rounded-xs hover:bg-indigo-200 hover:text-indigo-600" data-dismiss-target="#badge-dismiss-indigo" aria-label="Remove" onclick={onclick_remove}>
                                                     <svg class="w-2 h-2" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
                                                     </svg>
@@ -241,7 +240,7 @@ pub fn editor(props: &Props) -> Html {
                                                 </button>
                                             </span>
                                         }
-                                    })}
+                                    }).collect::<Html>()
                                 } else {
                                     html! {}
                                 }

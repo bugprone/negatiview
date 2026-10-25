@@ -21,7 +21,7 @@ pub struct Props {
 
 #[function_component(PostList)]
 pub fn post_list(props: &Props) -> Html {
-    let current_page = use_state(|| usize::default());
+    let current_page = use_state(usize::default);
     let post_list = {
         let filter = props.filter.clone();
         let current_page = current_page.clone();

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
 use axum::{
-    extract::State,
-    http::{header, Request, StatusCode},
+    extract::{Request, State},
+    http::{header, StatusCode},
     Json,
     middleware::Next,
     response::IntoResponse,
@@ -29,11 +29,11 @@ impl AuthUserClaims {
     }
 }
 
-pub async fn auth<B>(
+pub async fn auth(
     cookie_jar: CookieJar,
     State(data): State<Arc<AppState>>,
-    mut req: Request<B>,
-    next: Next<B>,
+    mut req: Request,
+    next: Next,
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let get_token = cookie_jar
         .get("access_token")
@@ -42,13 +42,7 @@ pub async fn auth<B>(
             req.headers()
                 .get(header::AUTHORIZATION)
                 .and_then(|auth_header| auth_header.to_str().ok())
-                .and_then(|auth_value| {
-                    if auth_value.starts_with("Bearer ") {
-                        Some(auth_value[7..].to_owned())
-                    } else {
-                        None
-                    }
-                })
+                .and_then(|auth_value| auth_value.strip_prefix("Bearer ").map(str::to_owned))
         });
 
     if get_token.is_none() {
@@ -88,7 +82,7 @@ pub async fn auth<B>(
 
     let mut redis_client = data
         .redis_client
-        .get_async_connection()
+        .get_multiplexed_async_connection()
         .await
         .map_err(|err| {
             (

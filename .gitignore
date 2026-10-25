@@ -40,3 +40,6 @@
 # Ignore any hidden files or directories
 /.*.swp
 /client/tailwind.css
+
+# Tailwind toolchain
+/client/node_modules/

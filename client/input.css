@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@source "./src/**/*.rs";
+@source "./index.html";
+
+/* Tailwind v4 changed these defaults; keep the v3 look the markup was written for. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}

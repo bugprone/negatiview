@@ -88,7 +88,7 @@ pub fn login_page() -> Html {
                         />
                 </div>
                 <div class="flex justify-center">
-                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring focus:ring-indigo-300 focus:outline-none">
+                    <button type="submit" class="w-full px-4 py-2 bg-indigo-600 border rounded-md text-white hover:bg-indigo-700 focus:ring-3 focus:ring-indigo-300 focus:outline-hidden">
                         { "Login" }
                     </button>
                 </div>

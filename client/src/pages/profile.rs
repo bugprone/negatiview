@@ -29,11 +29,10 @@ pub fn profile(props: &Props) -> Html {
         let profile = profile.clone();
         let display_name = props.display_name.clone();
         use_async(async move {
-            if let Some(resp) = &profile.data {
-                if resp.data.following {
+            if let Some(resp) = &profile.data
+                && resp.data.following {
                     return unfollow(display_name).await;
                 }
-            }
             follow(display_name).await
         })
     };
