@@ -12,7 +12,6 @@ gloo = "0.12"
 gloo-net = "0.7"
 log = "0.4.20"
 pulldown-cmark = "0.13"
-reqwest = { version = "0.13", features = ["json"], default-features = false }
 serde = "1.0.188"
 serde_json = "1.0.107"
 thiserror = "2"

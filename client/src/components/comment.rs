@@ -1,4 +1,6 @@
 use yew::prelude::*;
+
+use crate::components::avatar::Avatar;
 use yew_router::prelude::*;
 use crate::components::delete_comment::DeleteComment;
 
@@ -23,11 +25,7 @@ pub fn comment(props: &Props) -> Html {
         <div class="p-4 border border-gray-200 rounded-md shadow-md mb-4">
             <p class="text-gray-800 mb-4">{ &comment.body }</p>
             <div class="flex items-center space-x-2 text-gray-600">
-                <img
-                    src={ comment.author.profile_image_url.clone() }
-                    class="w-8 h-8 rounded-full"
-                    alt={ comment.author.display_name.clone() }
-                />
+                <Avatar name={ comment.author.display_name.clone() } url={ comment.author.profile_image_url.clone() } class="w-8 h-8 text-xs" />
                 <Link<AppRoute> classes="font-semibold hover:text-indigo-600" to={AppRoute::Profile { display_name: comment.author.display_name.clone() }}>
                     { &comment.author.display_name }
                 </Link<AppRoute>>

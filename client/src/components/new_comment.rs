@@ -1,5 +1,7 @@
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
+
+use crate::components::avatar::Avatar;
 use yew_hooks::prelude::*;
 
 use crate::components::show_error::ShowError;
@@ -50,9 +52,11 @@ pub fn new_comment(props: &Props) -> Html {
     {
         let new_comment_dto = new_comment_dto.clone();
         let callback = props.callback.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let new_comment = new_comment.clone();
         use_effect_with(
-            new_comment.clone(),
-            move |new_comment| {
+            (new_comment.data.clone(), new_comment.error.clone(), new_comment.loading),
+            move |_| {
                 if let Some(comment_dto) = &new_comment.data {
                     new_comment_dto.set(NewCommentDto::default());
                     callback.emit(comment_dto.data.clone());
@@ -70,11 +74,7 @@ pub fn new_comment(props: &Props) -> Html {
                 {
                     if user_ctx.is_authenticated() {
                         html! {
-                            <img
-                                src={ user_ctx.profile_image_url.clone() }
-                                class="w-10 h-10 rounded-full"
-                                alt={ user_ctx.display_name.clone() }
-                            />
+                            <Avatar name={ user_ctx.display_name.clone() } url={ user_ctx.profile_image_url.clone() } class="w-10 h-10" />
                         }
                     } else {
                         html! {}

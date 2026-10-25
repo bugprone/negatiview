@@ -1,3 +1,4 @@
+pub mod avatar;
 pub mod banner;
 pub mod comment;
 pub mod comment_list;

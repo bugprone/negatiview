@@ -30,9 +30,11 @@ pub fn user_context_provider(props: &Props) -> Html {
 
     {
         let user_ctx = user_ctx.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let current_user = current_user.clone();
         use_effect_with(
-            current_user,
-            move |current_user| {
+            (current_user.data.clone(), current_user.error.clone(), current_user.loading),
+            move |_| {
                 if let Some(resp) = &current_user.data {
                     user_ctx.set(resp.data.clone());
                 }

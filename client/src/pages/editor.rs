@@ -56,9 +56,11 @@ pub fn editor(props: &Props) -> Html {
     {
         let update_dto = update_dto.clone();
         let error = error.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let post_get = post_get.clone();
         use_effect_with(
-            post_get,
-            move |post_get| {
+            (post_get.data.clone(), post_get.error.clone(), post_get.loading),
+            move |_| {
                 if let Some(resp) = &post_get.data {
                     update_dto.set(PostUpdateDto {
                         title: resp.data.title.clone(),
@@ -79,9 +81,11 @@ pub fn editor(props: &Props) -> Html {
 
     {
         let error = error.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let post_update = post_update.clone();
         use_effect_with(
-            post_update.clone(),
-            move |post_update| {
+            (post_update.data.clone(), post_update.error.clone(), post_update.loading),
+            move |_| {
                 if let Some(resp) = &post_update.data {
                     error.set(None);
                     navigator.push(&AppRoute::Post {
@@ -165,7 +169,9 @@ pub fn editor(props: &Props) -> Html {
 
     html! {
         <div class="lg:w-2/3 mx-auto mt-12 mb-12">
-            <h1 class="text-center text-xl font-semibold">{ "New Post" }</h1>
+            <h1 class="text-center text-xl font-semibold">
+                { if props.post_id.is_some() { "Edit Post" } else { "New Post" } }
+            </h1>
             <div class="mt-4">
                 <ShowError error={(*error).clone()} />
                 <form {onsubmit} class="space-y-4">

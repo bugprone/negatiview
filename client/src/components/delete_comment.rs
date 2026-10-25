@@ -27,9 +27,11 @@ pub fn delete_comment(props: &Props) -> Html {
 
     {
         let callback = props.callback.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let delete_comment = delete_comment.clone();
         use_effect_with(
-            delete_comment.clone(),
-            move |delete_comment| {
+            (delete_comment.data.clone(), delete_comment.error.clone(), delete_comment.loading),
+            move |_| {
                 if let Some(delete_comment) = &delete_comment.data {
                     callback.emit(delete_comment.data.clone());
                 }

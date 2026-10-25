@@ -21,15 +21,19 @@ pub fn sign_up_page() -> Html {
         })
     };
 
-    use_effect_with(
-        sign_up.clone(),
-        move |sign_up| {
-            if let Some(resp) = &sign_up.data {
-                user_ctx.login(resp.data.clone());
-            }
-            || ()
-        },
-    );
+    {
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let sign_up = sign_up.clone();
+        use_effect_with(
+            (sign_up.data.clone(), sign_up.error.clone(), sign_up.loading),
+            move |_| {
+                if let Some(resp) = &sign_up.data {
+                    user_ctx.login(resp.data.clone());
+                }
+                || ()
+            },
+        );
+    }
 
     let onsubmit = {
         let sign_up = sign_up.clone();

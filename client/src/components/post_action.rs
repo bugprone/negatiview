@@ -26,9 +26,11 @@ pub fn post_action(props: &Props) -> Html {
         })
     };
 
+    // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+    let delete = delete.clone();
     use_effect_with(
-        delete,
-        move |delete| {
+        (delete.data.clone(), delete.error.clone(), delete.loading),
+        move |_| {
             if delete.data.is_some() {
                 navigator.push(&AppRoute::Home);
             }

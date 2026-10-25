@@ -1,6 +1,7 @@
 use std::sync::{LazyLock, RwLock};
 
 use gloo::storage::{LocalStorage, Storage};
+use gloo_net::http::{Method, RequestBuilder};
 use serde::{de::DeserializeOwned, Serialize};
 
 use crate::middlewares::error::{Error, ErrorInfo};
@@ -28,55 +29,49 @@ pub fn set_token(token: Option<String>) {
     *token_lock = token.clone();
 }
 
-async fn request<B, T>(method: reqwest::Method, url: String, body: B) -> Result<T, Error>
+async fn request<B, T>(method: Method, url: String, body: B) -> Result<T, Error>
 where
     B: Serialize + std::fmt::Debug,
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
+    let allow_body = method == Method::POST || method == Method::PUT;
     let url = format!("{}{}", API_ROOT, url);
-    let mut builder = reqwest::Client::new()
-        .request(method, url)
+    let mut builder = RequestBuilder::new(&url)
+        .method(method)
         .header("Content-Type", "application/json");
 
     if let Some(token) = get_token() {
-        builder = builder.bearer_auth(token);
+        builder = builder.header("Authorization", &format!("Bearer {token}"));
     }
 
-    if allow_body {
-        builder = builder.json(&body);
-    }
+    let request = if allow_body {
+        builder.json(&body).map_err(|_| Error::BadRequest)?
+    } else {
+        builder.build().map_err(|_| Error::BadRequest)?
+    };
 
-    let response = builder.send().await;
+    let response = request.send().await.map_err(|_| Error::BadRequest)?;
 
-    if let Ok(data) = response {
-        if data.status().is_success() {
-            let data: Result<T, _> = data.json::<T>().await;
-            if let Ok(data) = data {
+    if response.ok() {
+        return match response.json::<T>().await {
+            Ok(data) => {
                 log::debug!("Got data: {:?}", data);
                 Ok(data)
-            } else {
-                Err(Error::DeserializationError)
             }
-        } else {
-            match data.status().as_u16() {
-                401 => Err(Error::Unauthorized),
-                403 => Err(Error::Forbidden),
-                404 => Err(Error::NotFound),
-                500 => Err(Error::InternalServerError),
-                422 => {
-                    let data: Result<ErrorInfo, _> = data.json::<ErrorInfo>().await;
-                    if let Ok(data) = data {
-                        Err(Error::UnprocessableEntity(data))
-                    } else {
-                        Err(Error::DeserializationError)
-                    }
-                }
-                _ => Err(Error::BadRequest),
-            }
-        }
-    } else {
-        Err(Error::BadRequest)
+            Err(_) => Err(Error::DeserializationError),
+        };
+    }
+
+    match response.status() {
+        401 => Err(Error::Unauthorized),
+        403 => Err(Error::Forbidden),
+        404 => Err(Error::NotFound),
+        500 => Err(Error::InternalServerError),
+        422 => match response.json::<ErrorInfo>().await {
+            Ok(info) => Err(Error::UnprocessableEntity(info)),
+            Err(_) => Err(Error::DeserializationError),
+        },
+        _ => Err(Error::BadRequest),
     }
 }
 
@@ -84,7 +79,7 @@ pub async fn request_get<T>(url: String) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    request(reqwest::Method::GET, url, ()).await
+    request(Method::GET, url, ()).await
 }
 
 pub async fn request_post<B, T>(url: String, body: B) -> Result<T, Error>
@@ -92,7 +87,7 @@ where
     B: Serialize + std::fmt::Debug,
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    request(reqwest::Method::POST, url, Some(body)).await
+    request(Method::POST, url, Some(body)).await
 }
 
 pub async fn request_put<B, T>(url: String, body: B) -> Result<T, Error>
@@ -100,12 +95,12 @@ where
     B: Serialize + std::fmt::Debug,
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    request(reqwest::Method::PUT, url, Some(body)).await
+    request(Method::PUT, url, Some(body)).await
 }
 
 pub async fn request_delete<T>(url: String) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    request(reqwest::Method::DELETE, url, ()).await
+    request(Method::DELETE, url, ()).await
 }

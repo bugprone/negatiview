@@ -34,9 +34,11 @@ pub fn setting() -> Html {
     {
         let user = user.clone();
         let update_dto = update_dto.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let user = user.clone();
         use_effect_with(
-            user,
-            move |user| {
+            (user.data.clone(), user.error.clone(), user.loading),
+            move |_| {
                 if let Some(user) = &user.data {
                     update_dto.set(UserUpdateDto {
                         email: user.data.email.clone(),
@@ -54,9 +56,11 @@ pub fn setting() -> Html {
     {
         let user_ctx = user_ctx.clone();
         let update = update.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let update = update.clone();
         use_effect_with(
-            update,
-            move |update| {
+            (update.data.clone(), update.error.clone(), update.loading),
+            move |_| {
                 if let Some(user) = &update.data {
                     user_ctx.login_without_redirection(user.data.clone());
                 }

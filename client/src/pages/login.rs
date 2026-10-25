@@ -22,15 +22,19 @@ pub fn login_page() -> Html {
         })
     };
 
-    use_effect_with(
-        login.clone(),
-        move |login| {
-            if let Some(resp) = &login.data {
-                user_ctx.login(resp.data.clone());
-            }
-            || ()
-        },
-    );
+    {
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let login = login.clone();
+        use_effect_with(
+            (login.data.clone(), login.error.clone(), login.loading),
+            move |_| {
+                if let Some(resp) = &login.data {
+                    user_ctx.login(resp.data.clone());
+                }
+                || ()
+            },
+        );
+    }
 
     let onsubmit = {
         let login = login.clone();

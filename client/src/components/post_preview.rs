@@ -1,5 +1,7 @@
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+
+use crate::components::avatar::Avatar;
 use yew_router::prelude::*;
 
 use crate::routes::AppRoute;
@@ -79,7 +81,7 @@ impl Component for PostPreview {
         html! {
             <div class="bg-indigo-50 rounded-lg shadow-lg p-6 my-4">
                 <div class="flex items-center relative mb-4">
-                    <img src={post.author.profile_image_url} alt="Author Image" class="w-10 h-10 rounded-full mr-2" />
+                    <Avatar name={post.author.display_name.clone()} url={post.author.profile_image_url.clone()} class="w-10 h-10 mr-2" />
                     <div>
                         <div class="text-indigo-600 hover:underline">
                             <Link<AppRoute> to={AppRoute::Profile { display_name: post.author.display_name.clone() }}>

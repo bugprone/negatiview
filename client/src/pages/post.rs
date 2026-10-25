@@ -83,6 +83,7 @@ fn view_body(body: &str) -> Html {
         .create_element("div")
         .unwrap();
 
+    div.set_class_name("prose prose-indigo max-w-none");
     div.set_inner_html(html_text.as_str());
     let node = Node::from(div);
     VNode::VRef(node)

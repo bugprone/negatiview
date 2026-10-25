@@ -1,4 +1,6 @@
 use yew::prelude::*;
+
+use crate::components::avatar::Avatar;
 use yew_hooks::prelude::*;
 use yew_router::prelude::*;
 
@@ -54,9 +56,11 @@ pub fn profile(props: &Props) -> Html {
 
     {
         let profile = profile.clone();
+        // Key on the async state, not the handle: yew 0.23 handles compare equal across renders.
+        let follow = follow.clone();
         use_effect_with(
-            follow.clone(),
-            move |follow| {
+            (follow.data.clone(), follow.error.clone(), follow.loading),
+            move |_| {
                 if let Some(resp) = &follow.data {
                     profile.update(resp.clone());
                 }
@@ -79,7 +83,7 @@ pub fn profile(props: &Props) -> Html {
                     <div class="mx-auto">
                         <div>
                             <div class="col-xs-12 col-md-10 mx-auto">
-                                <img src={profile.profile_image_url.clone()} alt={profile.display_name.clone()} class="w-20 h-20 rounded-full mx-auto mb-4" />
+                                <Avatar name={profile.display_name.clone()} url={profile.profile_image_url.clone()} class="w-20 h-20 mx-auto mb-4 text-2xl" />
                                 <h4 class="text-2xl font-bold text-center">{&profile.display_name}</h4>
                                 <p class="text-gray-600 text-center">
                                     {
