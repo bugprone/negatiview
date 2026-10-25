@@ -215,7 +215,7 @@ pub async fn new_post(
 ) -> Result<impl IntoResponse, (StatusCode, Json<Value>)> {
     let user_id = &auth_user_claims.user_id().unwrap_or_default();
     let mut dto = body.data;
-    let slug = slugify(dto.title.as_str());
+    let slug = unique_slug(dto.title.as_str());
     dto.tags.sort();
 
     let post = sqlx::query_as!(
@@ -307,7 +307,7 @@ pub async fn update_post(
         ))
     }
 
-    let slug = body.data.title.as_deref().map(slugify);
+    let slug = body.data.title.as_deref().map(unique_slug);
 
     let post = sqlx::query_as!(
         PostFromQuery,
@@ -537,6 +537,13 @@ pub async fn unfavorite_post(
     });
 
     Ok((StatusCode::CREATED, Json(json_response)))
+}
+
+/// Posts are addressed by id, so the slug is cosmetic; a short random suffix keeps
+/// the `posts.slug` UNIQUE constraint from rejecting two posts with the same title.
+fn unique_slug(title: &str) -> String {
+    let suffix = uuid::Uuid::new_v4().simple().to_string();
+    format!("{}-{}", slugify(title), &suffix[..8])
 }
 
 fn slugify(string: &str) -> String {
