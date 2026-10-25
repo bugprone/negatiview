@@ -1,27 +1,77 @@
-# Negatiview
+<h1 align="center">Negatiview</h1>
 
-[![CI](https://github.com/bugprone/negatiview/actions/workflows/ci.yml/badge.svg)](https://github.com/bugprone/negatiview/actions/workflows/ci.yml)
+<p align="center"><em>Why you shouldn't purchase this product.</em></p>
 
-*Why you shouldn't purchase this product.*
+<p align="center">
+  <a href="https://github.com/bugprone/negatiview/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/bugprone/negatiview/actions/workflows/ci.yml/badge.svg"></a>
+  <img alt="Rust 2024" src="https://img.shields.io/badge/rust-2024_edition-000000?logo=rust">
+  <img alt="axum 0.8" src="https://img.shields.io/badge/axum-0.8-6e56cf">
+  <img alt="yew 0.23" src="https://img.shields.io/badge/yew-0.23-009a5b">
+  <a href="LICENSE"><img alt="MIT" src="https://img.shields.io/badge/license-MIT-blue"></a>
+</p>
 
-Negatiview is a [RealWorld](https://github.com/gothinkster/realworld)-style
-publishing platform for negative product reviews, written end to end in Rust.
-The server is Axum + SQLx on PostgreSQL with Redis for token revocation; the
-client is Yew compiled to WebAssembly and styled with Tailwind.
+A [RealWorld](https://github.com/gothinkster/realworld)-style publishing
+platform for negative product reviews, written end to end in Rust. The server
+is Axum + SQLx on PostgreSQL with Redis for token revocation. The client is Yew
+compiled to WebAssembly and styled with Tailwind v4. One binary serves both.
+
+<p align="center">
+  <img alt="Home: global and personal feed with popular tags" src="docs/screenshots/home-feed.png" width="880">
+</p>
+
+## Highlights
+
+- **Every SQL statement is type-checked at compile time.** `sqlx::query!`
+  validates each query against the real schema and the metadata is committed
+  under `.sqlx/`, so a wrong column name is a build error and CI needs no
+  database.
+- **Stateless auth with real revocation.** RS256 JWTs carry a `token_uuid`;
+  Redis maps that uuid to the token with the same TTL. Verification needs only
+  the public key, revocation is a key delete.
+- **Same-origin, single-binary deploy.** The Axum server mounts the Trunk
+  bundle with `ServeDir`, falls back to `index.html` for client routes, and the
+  client talks to `/api`. No CORS, no per-environment rebuild.
+- **Rust on both sides of the wire.** Yew function components, `yew-router`,
+  a context provider for the signed-in user, Markdown rendered in the browser
+  with `pulldown-cmark` and styled by Tailwind Typography.
+- **Current toolchain.** Rust 2024 edition, axum 0.8, sqlx 0.9, yew 0.23,
+  Tailwind v4, clippy clean, CI on every push.
+
+## Screenshots
+
+| Post with rendered Markdown and comments | Editor |
+|---|---|
+| ![Post](docs/screenshots/post.png) | ![Editor](docs/screenshots/editor.png) |
+
+| Profile | Login |
+|---|---|
+| ![Profile](docs/screenshots/profile.png) | ![Login](docs/screenshots/login.png) |
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Yew[Yew SPA · wasm] -- "/ , *.wasm, *.css" --> Static[ServeDir + SPA fallback]
+    Yew -- "JSON · /api" --> API[axum router]
+    API --> Auth[auth middleware]
+    Auth -- "RS256 verify + token uuid" --> Redis[(Redis)]
+    API -- "sqlx · compile-time checked" --> PG[(PostgreSQL)]
+```
+
+The full write-up, including the login sequence diagram, the entity
+relationship diagram and the decision log, is in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Features
 
 - Email/password sign-up and login with RS256 JWTs. Short-lived access tokens
   and longer-lived refresh tokens are issued as HttpOnly cookies and also
-  accepted as `Authorization: Bearer`. Every access token is keyed by UUID in
-  Redis with a TTL, so a token can be revoked before it expires.
-- Posts written in Markdown (rendered client-side with `pulldown-cmark`),
-  tagged, favorited, edited and deleted by their author.
+  accepted as `Authorization: Bearer`.
+- Posts written in Markdown, tagged, favorited, edited and deleted by their
+  author.
 - Comments, author profiles, follow/unfollow, and a personal feed built from
   the users you follow.
 - Pagination, a popular-tags sidebar, and a global feed for anonymous visitors.
-- Single binary deploy: the server serves the compiled client from `--static-dir`
-  and falls back to `index.html` for client-side routes.
 
 ## Stack
 
@@ -29,9 +79,7 @@ client is Yew compiled to WebAssembly and styled with Tailwind.
 |---|---|
 | Server | `axum` 0.8, `tower-http`, `sqlx` 0.9 (PostgreSQL), `redis` 1.x, `jsonwebtoken` 11, `argon2`, `tokio` |
 | Client | `yew` 0.23, `yew-router`, `yew-hooks`, `gloo-net`, `pulldown-cmark`, Tailwind CSS v4 |
-| Tooling | Rust 2024 edition (MSRV 1.94), `trunk` (wasm bundler), `sqlx-cli` 0.9 (migrations, offline query cache), Docker Compose |
-
-![Database schema](https://github.com/bugprone/negatiview/assets/17267089/bf708310-bee5-4fbb-b223-e91726f1d4e9)
+| Tooling | Rust 2024 edition (MSRV 1.94), `trunk` (wasm bundler), `sqlx-cli` 0.9 (migrations, offline query cache), Docker Compose, GitHub Actions |
 
 ## API
 
@@ -52,6 +100,8 @@ All routes live under `/api`. Routes marked 🔒 need a valid access token.
 | GET / POST | `/posts/{id}/comments` 🔒 | List / add comments |
 | DELETE | `/posts/{id}/comments/{comment_id}` 🔒 | Delete a comment |
 | GET | `/tags` | Popular tags |
+
+Request and response bodies are wrapped in `{"data": ...}`.
 
 ## Getting started
 
@@ -93,6 +143,13 @@ cargo install trunk sqlx-cli
    ./dev.sh
    ```
 
+4. **Seed some data** (optional). `scripts/seed.py` creates three reviewers,
+   six reviews, comments, follows and favorites through the public API:
+
+   ```bash
+   python3 scripts/seed.py http://localhost:8081/api
+   ```
+
 ### Production build
 
 ```bash
@@ -119,17 +176,26 @@ cargo sqlx prepare --workspace
 ## Project layout
 
 ```
-client/           Yew application (pages, components, API services, types)
-client/input.css  Tailwind v4 entry (plus v3-compat base styles); built by `npm run css`
+client/              Yew application (pages, components, API services, types)
+client/input.css     Tailwind v4 entry (plus v3-compat base styles); built by `npm run css`
 client/package.json  Tailwind CLI only; Rust is built by trunk
 server/
-  src/handlers/   Axum handlers per resource (user, profile, post, comment, tag)
-  src/middlewares/auth.rs   JWT verification + Redis token lookup
-  src/models/     Row types and query helpers
-  src/routes.rs   Router, CORS, tracing, static-file fallback
-migrations/       SQLx migrations
-dev.sh            trunk serve + cargo watch
+  src/handlers/      Axum handlers per resource (user, profile, post, comment, tag)
+  src/middlewares/   auth.rs: JWT verification + Redis token lookup; token.rs: issue/verify
+  src/models/        Row types mapped from query_as!
+  src/routes.rs      Router, CORS, tracing, static-file fallback
+migrations/          SQLx migrations
+docs/                Architecture write-up and screenshots
+scripts/seed.py      Demo data through the API
+dev.sh               trunk serve + cargo watch
 ```
+
+## Roadmap
+
+- `/user/refresh` and `/user/logout` endpoints: the refresh token is issued
+  but not yet consumed, and logout is client-side only.
+- Map database constraint violations (self-follow, duplicate email) to 4xx.
+- Integration tests against a throwaway PostgreSQL in CI.
 
 ## License
 
